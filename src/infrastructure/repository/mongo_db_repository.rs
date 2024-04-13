@@ -1,29 +1,31 @@
 use async_trait::async_trait;
 use mongodb::{bson::Document, options::ClientOptions, Client, Collection};
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::filter::data_base_query::DataBaseQuery};
+use crate::{
+    commons::exception::connect_exception::ConnectException, 
+    domain::{
+        connection_data::ConnectionData, 
+        filter::data_base_query::DataBaseQuery
+    }
+};
 
 use super::i_db_repository::IDBRepository;
 
 pub struct MongoDbRepository {
-    client: Client,
-    data_base: String,
-    collection: String
+    client: Client
 }
 
 impl MongoDbRepository {
     
-    pub async fn new() -> Result<impl IDBRepository, ConnectException> {
+    pub async fn new(connection: ConnectionData) -> Result<impl IDBRepository, ConnectException> {
         let client = MongoDbRepository::connect(String::new()).await;
         if client.is_err() {
-            let exception = ConnectException::new(String::new());
+            let exception = ConnectException::new(connection.connection());
             return Err(exception);
         }
         
         let instance = MongoDbRepository {
-            client: client.ok().unwrap(),
-            data_base: String::new(),
-            collection: String::new()
+            client: client.ok().unwrap()
         };
 
         Ok(instance)
@@ -35,8 +37,10 @@ impl MongoDbRepository {
         Ok(client)
     }
 
-    fn collection(self) -> Collection<Document> {
-        return self.client.database(&self.data_base).collection(&self.collection);
+    fn collection(self, query: DataBaseQuery) -> Collection<Document> {
+        let data_base = query.data_base();
+        let collection = query.collection();
+        return self.client.database(&data_base).collection(&collection);
     }
 
 }

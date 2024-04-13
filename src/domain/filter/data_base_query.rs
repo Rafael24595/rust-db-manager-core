@@ -24,4 +24,12 @@ impl DataBaseQuery {
         }
     }
 
+    pub fn data_base(&self) -> String {
+        return self.data_base.clone();
+    }
+
+    pub fn collection(&self) -> String {
+        return self.collection.clone();
+    }
+
 }

@@ -16,6 +16,7 @@ mod domain {
         pub mod filter_value;
         pub mod filter_element;
     }
+    pub mod connection_data;
 }
 mod service {}
 
