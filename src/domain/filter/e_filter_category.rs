@@ -1,9 +1,10 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum EFilterCategory {
     ID,
     QUERY,
-    COLLECTION,
     STRING,
     BOOLEAN,
     NUMERIC,
+    COLLECTION,
+    ROOT,
 }

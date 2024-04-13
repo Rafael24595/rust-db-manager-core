@@ -1,4 +1,4 @@
-use super::filter_value::FilterValue;
+use super::{e_filter_category::EFilterCategory, filter_value::FilterValue};
 
 #[derive(Clone)]
 pub struct FilterElement {
@@ -9,6 +9,16 @@ pub struct FilterElement {
 
 impl FilterElement {
     
+    pub fn new() -> FilterElement {
+        let f_value = FilterValue::from_root(String::new());
+        return FilterElement::from(String::new(), f_value, false);
+    }
+
+    pub fn from_query(value: String) -> FilterElement {
+        let f_value = FilterValue::from_query(value);
+        return FilterElement::from(String::new(), f_value, false);
+    }
+
     pub fn from_string(key: String, value: String) -> FilterElement {
         let f_value = FilterValue::from_string(value);
         return FilterElement::from(key, f_value, false);
@@ -61,18 +71,40 @@ impl FilterElement {
 impl FilterElement {
     
     pub fn push(&self, filter: FilterElement) -> FilterElement {
-        let collection = Vec::from(vec![self.clone(), filter]);
+        let mut collection = Vec::new();
+        if self.value.category() != EFilterCategory::ROOT {
+            collection.push(self.clone());
+        }
+        collection.push(filter);
+
         let value = FilterValue::from_collection(collection);
-        let element = FilterElement::from_value(self.key.clone(), value);
-        return element;
+        return FilterElement::from_value(self.key.clone(), value);
     }
 
-    pub fn negate(& mut self) {
+    pub fn negate(&mut self) -> &mut FilterElement {
         self.negation = true;
+        return self;
     }
 
-    pub fn affirmate(& mut self) {
+    pub fn affirmate(&mut self) -> &mut FilterElement {
         self.negation = false;
+        return self;
     }
+
+    pub fn field(&self) -> String {
+        return self.key.clone();
+    }
+
+    pub fn value(&self) -> &FilterValue {
+        return &self.value;
+    }
+
+    pub fn is_negate(&self) -> bool {
+        return self.negation;
+    }
+
+    pub fn as_ref(&self) -> FilterElement {
+        return self.clone();
+    } 
 
 }

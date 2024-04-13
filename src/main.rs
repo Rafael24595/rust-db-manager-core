@@ -2,6 +2,7 @@ mod commons {
     pub mod exception {
         pub mod connect_exception;
     }
+    pub mod utils;
 }
 mod infrastructure {
     pub mod repository {
