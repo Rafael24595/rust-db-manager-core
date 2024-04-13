@@ -1,7 +1,12 @@
-mod commons {}
+mod commons {
+    pub mod exception {
+        pub mod connect_exception;
+    }
+}
 mod infrastructure {
     pub mod repository {
         pub mod i_db_repository;
+        pub mod mongo_db_repository;
     }
 }
 mod domain {
