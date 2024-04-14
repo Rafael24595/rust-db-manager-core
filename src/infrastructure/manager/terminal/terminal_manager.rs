@@ -4,8 +4,9 @@ use crossterm::event::{read, Event, KeyCode, KeyEventKind};
 
 use super::{i_manager::IManager, terminal_cursor::TerminalCursor};
 
-const ANSI_COLOR_RESET: &'static str = "\x1b[0m";
-const ANSI_BACKGROUND_WHITE: &'static str = "\x1b[47m";
+pub(crate) const ANSI_COLOR_RESET: &'static str = "\x1b[0m";
+pub(crate) const ANSI_BACKGROUND_WHITE: &'static str = "\x1b[47m";
+pub(crate) const ANSI_BOLD: &'static str = "\x1b[1m";
 
 #[derive(Clone)]
 pub struct TerminalManager<T: IManager> {
@@ -18,7 +19,7 @@ impl <T: IManager> TerminalManager<T> {
         return TerminalManager {cursor};
     }
 
-    pub fn launch(&mut self) -> io::Result<()> {
+    pub async fn launch(&mut self) -> io::Result<()> {
 
         self.hide_cursor();
 
@@ -38,9 +39,10 @@ impl <T: IManager> TerminalManager<T> {
                     KeyCode::Up => {self.cursor.decrease();},
                     KeyCode::Down => {self.cursor.increase();},
                     KeyCode::Enter => {
-                        println!("Enter");
+                        
+                        println!("\n Please stand by...");
 
-                        let update = self.manage();
+                        let update = self.manage().await;
                         if update.is_none() {
                             println!("Something goes wrong!");
                             break;
@@ -93,11 +95,11 @@ impl <T: IManager> TerminalManager<T> {
 
     }
 
-    fn manage(&mut self) -> Option<TerminalCursor<T>> {
+    async fn manage(&mut self) -> Option<TerminalCursor<T>> {
         let o_option = self.cursor.option();
         if o_option.is_some() {
             let option = o_option.unwrap();
-            return Some(option.execute());
+            return Some(option.execute().await);
         }
         None
     }

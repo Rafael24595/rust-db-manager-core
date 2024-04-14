@@ -11,15 +11,15 @@ impl <T: IDBRepository> Service<T> {
         Service { repository }
     }
 
-    async fn list_data_bases(self) -> Result<Vec<String>, ConnectException> {
+    pub async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
         return self.repository.list_data_bases().await;
     }
 
-    async fn list_collections(self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.list_collections(query).await;
     }
 
-    async fn find(self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {
+    pub async fn find(&self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {
         return self.repository.find(query).await;
     }
 

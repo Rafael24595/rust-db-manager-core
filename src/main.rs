@@ -43,7 +43,7 @@ async fn main() {
     let service = Service::from(repository);
     let mut terminal = TerminalDatabase::new(service);
 
-    terminal.launch();
+    terminal.launch().await;
 
     println!("rust-db-manager!");
 }

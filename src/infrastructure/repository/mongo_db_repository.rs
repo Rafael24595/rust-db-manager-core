@@ -38,12 +38,12 @@ impl MongoDbRepository {
         Ok(client)
     }
 
-    fn data_base(self, query: &DataBaseQuery) -> Database {
+    fn data_base(&self, query: &DataBaseQuery) -> Database {
         let data_base = query.data_base();
         return self.client.database(&data_base);
     }
 
-    fn collection(self, query: &DataBaseQuery) -> Collection<Document> {
+    fn collection(&self, query: &DataBaseQuery) -> Collection<Document> {
         let collection = query.collection();
         return self.data_base(query).collection(&collection);
     }
@@ -53,7 +53,7 @@ impl MongoDbRepository {
 #[async_trait]
 impl IDBRepository for MongoDbRepository {
 
-    async fn status(self) -> Result<(), ConnectException> {
+    async fn status(&self) -> Result<(), ConnectException> {
         let result = self.client.list_database_names(None, None).await;
         if result.is_err() {
             let exception = ConnectException::new(result.err().unwrap().to_string());
@@ -62,11 +62,11 @@ impl IDBRepository for MongoDbRepository {
         return Ok(());
     }
 
-    fn info(self) -> Vec<u8> {
+    fn info(&self) -> Vec<u8> {
         todo!()
     }
 
-    async fn list_data_bases(self) -> Result<Vec<String>, ConnectException> {
+    async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
         let result = self.client.list_database_names(None, None).await;
         if result.is_err() {
             let exception = ConnectException::new(result.err().unwrap().to_string());
@@ -75,7 +75,7 @@ impl IDBRepository for MongoDbRepository {
         return Ok(result.ok().unwrap());
     }
 
-    async fn list_collections(self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let result = self.data_base(&query).list_collection_names(None).await;
         if result.is_err() {
             let exception = ConnectException::new(result.err().unwrap().to_string());
@@ -84,7 +84,7 @@ impl IDBRepository for MongoDbRepository {
         return Ok(result.ok().unwrap());
     }
 
-    async fn find(self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {
+    async fn find(&self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {
         let collection = self.collection(&query);
         
         let mut filter = FilterElement::new();
@@ -104,19 +104,19 @@ impl IDBRepository for MongoDbRepository {
         todo!()
     }
 
-    fn find_all(self, query: DataBaseQuery) -> Vec<String> {
+    fn find_all(&self, query: DataBaseQuery) -> Vec<String> {
         todo!()
     }
 
-    fn insert(self, query: DataBaseQuery, value: String) -> Vec<u8> {
+    fn insert(&self, query: DataBaseQuery, value: String) -> Vec<u8> {
         todo!()
     }
 
-    fn update(self, query: DataBaseQuery, value: String) -> Vec<u8> {
+    fn update(&self, query: DataBaseQuery, value: String) -> Vec<u8> {
         todo!()
     }
 
-    fn delete(self, query: DataBaseQuery) -> Vec<u8> {
+    fn delete(&self, query: DataBaseQuery) -> Vec<u8> {
         todo!()
     }
 
