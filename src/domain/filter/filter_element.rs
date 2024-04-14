@@ -86,9 +86,17 @@ impl FilterElement {
         return self;
     }
 
+    pub fn negate_ref(&mut self) -> FilterElement {
+        return self.negate().as_ref();
+    }
+
     pub fn affirmate(&mut self) -> &mut FilterElement {
         self.negation = false;
         return self;
+    }
+
+    pub fn affirmate_ref(&mut self) -> FilterElement {
+        return self.affirmate().as_ref();
     }
 
     pub fn field(&self) -> String {

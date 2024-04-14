@@ -1,11 +1,11 @@
 use async_trait::async_trait;
-use mongodb::{bson::Document, options::ClientOptions, Client, Collection};
+use mongodb::{bson::Document, options::{AggregateOptions, ClientOptions}, Client, Collection};
 
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
         connection_data::ConnectionData, 
-        filter::data_base_query::DataBaseQuery
+        filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}
     }
 };
 
@@ -37,7 +37,7 @@ impl MongoDbRepository {
         Ok(client)
     }
 
-    fn collection(self, query: DataBaseQuery) -> Collection<Document> {
+    fn collection(self, query: &DataBaseQuery) -> Collection<Document> {
         let data_base = query.data_base();
         let collection = query.collection();
         return self.client.database(&data_base).collection(&collection);
@@ -61,7 +61,23 @@ impl IDBRepository for MongoDbRepository {
         todo!()
     }
 
-    fn find(self, query: DataBaseQuery) -> Vec<u8> {
+    async fn find(self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {
+        let collection = self.collection(&query);
+        
+        let mut filter = FilterElement::new();
+
+        let o_filter = query.filter();
+        if o_filter.is_some() {
+            filter = o_filter.unwrap();
+        }
+
+        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
+        if pipeline.is_err() {
+            return Err(pipeline.err().unwrap());
+        }
+    
+        let cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
+
         todo!()
     }
 

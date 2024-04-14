@@ -32,4 +32,8 @@ impl DataBaseQuery {
         return self.collection.clone();
     }
 
+    pub fn filter(&self) -> Option<FilterElement> {
+        return self.filter.clone();
+    }
+
 }

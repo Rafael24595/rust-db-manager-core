@@ -1,4 +1,9 @@
+use mongodb::bson::Document;
+use serde_json::from_str;
+
 use crate::domain::filter::{e_filter_category::EFilterCategory, filter_element::FilterElement, filter_value::FilterValue};
+
+use super::exception::connect_exception::ConnectException;
 
 pub struct QueryItems {
     fields: Vec<String>,
@@ -7,14 +12,14 @@ pub struct QueryItems {
 
 impl FilterElement {
     
-    pub fn as_mongo_agregate(&self) -> String {
+    pub fn as_mongo_agregate(&self) -> Result<Vec<Document>, ConnectException> {
         let mut registry = QueryItems {fields: Vec::new(), queries: Vec::new()};
         registry = self._as_mongo_agregate(registry);
 
         let mut result = Vec::<String>::new();
 
         if !registry.fields.is_empty() {
-            let match_string = format!("{{ $match: {{ $and: [ {} ] }} }}", registry.fields.join(", "));
+            let match_string = format!("{{ \"$match\": {{ \"$and\": [ {} ] }} }}", registry.fields.join(", "));
             result.push(match_string);
         }
 
@@ -23,7 +28,14 @@ impl FilterElement {
             result.push(query_string);
         }
 
-        return format!("[ {} ]", result.join(", "));
+        let pipeline_str = &format!("[ {} ]", result.join(", "));
+        let pipeline: Result<Vec<Document>, serde_json::Error> = from_str(pipeline_str);
+        if pipeline.is_err() {
+            let exception = ConnectException::new(pipeline.err().unwrap().to_string());
+            return Err(exception);
+        }
+
+        return Ok(pipeline.ok().unwrap());
     }
 
     fn _as_mongo_agregate(&self, mut registry: QueryItems) -> QueryItems {
@@ -34,20 +46,22 @@ impl FilterElement {
         let mut value = result.0;
         registry = result.1;
 
-        if f_value.category() == EFilterCategory::COLLECTION {
+        let category = f_value.category();
+
+        if category == EFilterCategory::ROOT || category == EFilterCategory::COLLECTION {
             return registry;    
         }
 
-        if f_value.category() == EFilterCategory::QUERY {
+        if category == EFilterCategory::QUERY {
             registry.queries.push(value);
             return registry;    
         }
 
         if self.is_negate() {
-            value = format!("{{ $not: {{ $eq: {} }} }}", value);
+            value = format!("{{ \"$not\": {{ \"$eq\": {} }} }}", value);
         }
 
-        let query = format!("{{ {}: {} }}", field, value);
+        let query = format!("{{ \"{}\": {} }}", field, value);
         registry.fields.push(query);
         return registry;
     }

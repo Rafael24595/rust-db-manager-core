@@ -7,7 +7,7 @@ pub trait IDBRepository {
     //TODO: Replace bytes vector returns with specific entities.
     async fn status(self) -> Result<(), ConnectException>;
     fn info(self) -> Vec<u8>;
-    fn find(self, query: DataBaseQuery) -> Vec<u8>;
+    async fn find(self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException>;
     fn find_all(self, query: DataBaseQuery) -> Vec<String>;
     fn insert(self, query: DataBaseQuery, value: String) -> Vec<u8>;
     fn update(self, query: DataBaseQuery, value: String) -> Vec<u8>;
