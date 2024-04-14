@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use crate::{commons::exception::connect_exception::ConnectException, domain::filter::data_base_query::DataBaseQuery};
 
 #[async_trait]
-pub trait IDBRepository {
+pub trait IDBRepository: Clone {
     //TODO: Replace bytes vector returns with specific entities.
     async fn status(self) -> Result<(), ConnectException>;
     async fn list_data_bases(self) -> Result<Vec<String>, ConnectException>;

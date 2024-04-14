@@ -11,6 +11,7 @@ use crate::{
 
 use super::i_db_repository::IDBRepository;
 
+#[derive(Clone)]
 pub struct MongoDbRepository {
     client: Client
 }

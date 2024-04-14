@@ -1,5 +1,6 @@
 use crate::{commons::exception::connect_exception::ConnectException, domain::filter::data_base_query::DataBaseQuery, infrastructure::repository::i_db_repository::IDBRepository};
 
+#[derive(Clone)]
 pub struct Service<T: IDBRepository> {
     repository: T,
 }

@@ -1,3 +1,5 @@
+use crate::{domain::connection_data::ConnectionData, infrastructure::{manager::terminal::terminal_database::TerminalDatabase, repository::mongo_db_repository::MongoDbRepository}, service::service::Service};
+
 mod commons {
     pub mod exception {
         pub mod connect_exception;
@@ -5,6 +7,15 @@ mod commons {
     pub mod utils;
 }
 mod infrastructure {
+    pub mod manager {
+        pub mod terminal {
+            pub mod i_manager;
+            pub mod terminal_option;
+            pub mod terminal_database;
+            pub mod terminal_cursor;
+            pub mod terminal_manager;
+        }
+    }
     pub mod repository {
         pub mod i_db_repository;
         pub mod mongo_db_repository;
@@ -25,5 +36,14 @@ mod service {
 
 #[tokio::main]
 async fn main() {
+
+    let data = ConnectionData::new(String::from("mongodb://root:example@localhost:27017"));
+    let repository = MongoDbRepository::new(data).await.ok().unwrap();
+
+    let service = Service::from(repository);
+    let mut terminal = TerminalDatabase::new(service);
+
+    terminal.launch();
+
     println!("rust-db-manager!");
 }
