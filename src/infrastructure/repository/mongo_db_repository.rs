@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use mongodb::{bson::Document, options::{AggregateOptions, ClientOptions}, Client, Collection};
+use mongodb::{bson::Document, options::{AggregateOptions, ClientOptions}, Client, Collection, Database};
 
 use crate::{
     commons::exception::connect_exception::ConnectException, 
@@ -18,9 +18,9 @@ pub struct MongoDbRepository {
 impl MongoDbRepository {
     
     pub async fn new(connection: ConnectionData) -> Result<impl IDBRepository, ConnectException> {
-        let client = MongoDbRepository::connect(String::new()).await;
+        let client = MongoDbRepository::connect(connection.connection()).await;
         if client.is_err() {
-            let exception = ConnectException::new(connection.connection());
+            let exception = ConnectException::new(client.err().unwrap().to_string());
             return Err(exception);
         }
         
@@ -37,10 +37,14 @@ impl MongoDbRepository {
         Ok(client)
     }
 
-    fn collection(self, query: &DataBaseQuery) -> Collection<Document> {
+    fn data_base(self, query: &DataBaseQuery) -> Database {
         let data_base = query.data_base();
+        return self.client.database(&data_base);
+    }
+
+    fn collection(self, query: &DataBaseQuery) -> Collection<Document> {
         let collection = query.collection();
-        return self.client.database(&data_base).collection(&collection);
+        return self.data_base(query).collection(&collection);
     }
 
 }
@@ -59,6 +63,24 @@ impl IDBRepository for MongoDbRepository {
 
     fn info(self) -> Vec<u8> {
         todo!()
+    }
+
+    async fn list_data_bases(self) -> Result<Vec<String>, ConnectException> {
+        let result = self.client.list_database_names(None, None).await;
+        if result.is_err() {
+            let exception = ConnectException::new(result.err().unwrap().to_string());
+            return Err(exception);
+        }
+        return Ok(result.ok().unwrap());
+    }
+
+    async fn list_collections(self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        let result = self.data_base(&query).list_collection_names(None).await;
+        if result.is_err() {
+            let exception = ConnectException::new(result.err().unwrap().to_string());
+            return Err(exception);
+        }
+        return Ok(result.ok().unwrap());
     }
 
     async fn find(self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {

@@ -63,6 +63,7 @@ impl FilterElement {
 
         let query = format!("{{ \"{}\": {} }}", field, value);
         registry.fields.push(query);
+        
         return registry;
     }
 
