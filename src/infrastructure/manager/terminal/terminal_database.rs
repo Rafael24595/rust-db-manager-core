@@ -104,8 +104,10 @@ impl <T: IDBRepository> TerminalDatabase<T> {
 
     fn home(&self, header: &str) -> TerminalCursor<Self> {
         let mut cursor: TerminalCursor<Self> = TerminalCursor::new(header);
+
         cursor.push(TerminalOption::from(String::from("Show databases"), SHOW_DATABASES, self.clone()));
         cursor.push(TerminalOption::from(String::from("Select database"), SELECT_DATABASE_PANEL, self.clone()));
+
         if self.data_base.is_some() {
             cursor.push(TerminalOption::from(String::from("Show collections"), SHOW_COLLECTIONS, self.clone()));
             cursor.push(TerminalOption::from(String::from("Select collection"), SELECT_COLLECTION_PANEL, self.clone()));
@@ -178,15 +180,14 @@ impl <T: IDBRepository> TerminalDatabase<T> {
         cursor
     }
 
+
     fn select_database(&mut self, option: TerminalOption<Self>) -> TerminalCursor<Self> {
         let args = option.args();
         if args.len() > 0 {
             let data_base = args.get(0).unwrap().to_string();
             self.data_base = Some(data_base);
         } else {
-            self.data_base = None;
-            self.collection = None;
-            self.element = None;
+            self.reset_database();
         }
 
         self.home(&self.default_header())
@@ -194,9 +195,8 @@ impl <T: IDBRepository> TerminalDatabase<T> {
 
 
     async fn show_collections(&self) -> TerminalCursor<Self> {
-        if self.data_base.is_none() {
-            let header = self.info_headers("No data base selected:");
-            return self.home(&header);
+        if let Some(error) = self.verify_database() {
+            return error;
         }
 
         let query = DataBaseQuery::from_data_base(self.data_base.clone().unwrap());
@@ -226,9 +226,8 @@ impl <T: IDBRepository> TerminalDatabase<T> {
     }
 
     async fn select_collection_panel(&self) -> TerminalCursor<Self> {
-        if self.data_base.is_none() {
-            let header = self.info_headers("No data base selected:");
-            return self.home(&header);
+        if let Some(error) = self.verify_database() {
+            return error;
         }
 
         let query = DataBaseQuery::from_data_base(self.data_base.clone().unwrap());
@@ -263,8 +262,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
             let collection = args.get(0).unwrap().to_string();
             self.collection = Some(collection);
         } else {
-            self.collection = None;
-            self.element = None;
+            self.reset_collection();
         }
 
         self.home(&self.default_header())
@@ -272,14 +270,8 @@ impl <T: IDBRepository> TerminalDatabase<T> {
 
 
     async fn show_elements(&self) -> TerminalCursor<Self> {
-        if self.data_base.is_none() {
-            let header = self.info_headers("No data base selected:");
-            return self.home(&header);
-        }
-
-        if self.collection.is_none() {
-            let header = self.info_headers("No collection selected:");
-            return self.home(&header);
+        if let Some(error) = self.verify_collection() {
+            return error;
         }
 
         let query = DataBaseQuery::from(self.data_base.clone().unwrap(), self.collection.clone().unwrap());
@@ -309,14 +301,8 @@ impl <T: IDBRepository> TerminalDatabase<T> {
     }
 
     async fn select_element_panel(&self) -> TerminalCursor<Self> {
-        if self.data_base.is_none() {
-            let header = self.info_headers("No data base selected:");
-            return self.home(&header);
-        }
-
-        if self.collection.is_none() {
-            let header = self.info_headers("No collection selected:");
-            return self.home(&header);
+        if let Some(error) = self.verify_collection() {
+            return error;
         }
 
         let query = DataBaseQuery::from(self.data_base.clone().unwrap(), self.collection.clone().unwrap());
@@ -351,26 +337,15 @@ impl <T: IDBRepository> TerminalDatabase<T> {
             let element = args.get(0).unwrap().to_string();
             self.element = Some(element);
         } else {
-            self.element = None;
+            self.reset_element();
         }
 
         self.home(&self.default_header())
     }
 
     async fn show_element(&self) -> TerminalCursor<Self> {
-        if self.data_base.is_none() {
-            let header = self.info_headers("No data base selected:");
-            return self.home(&header);
-        }
-
-        if self.collection.is_none() {
-            let header = self.info_headers("No collection selected:");
-            return self.home(&header);
-        }
-
-        if self.element.is_none() {
-            let header = self.info_headers("No element selected:");
-            return self.home(&header);
+        if let Some(error) = self.verify_element() {
+            return error;
         }
 
         let filter = FilterElement::from_id_chain(self.element.clone().unwrap());
@@ -389,7 +364,49 @@ impl <T: IDBRepository> TerminalDatabase<T> {
         }
 
         let header = self.info_headers("Item:");
-        self.home(&format!("{}\n{}", header, document.unwrap()))
+        self.home(&format!("{}\n\n{}", header, document.unwrap()))
+    }
+    
+    
+    fn verify_element(&self) -> Option<TerminalCursor<Self>> {
+        if self.element.is_none() {
+            let header = self.info_headers("No element selected:");
+            return Some(self.home(&header));
+        }
+
+        self.verify_collection()
+    }
+
+    fn verify_collection(&self) -> Option<TerminalCursor<Self>> {
+        if self.collection.is_none() {
+            let header = self.info_headers("No collection selected:");
+            return Some(self.home(&header));
+        }
+
+        self.verify_database()
+    }
+
+    fn verify_database(&self) -> Option<TerminalCursor<Self>> {
+        if self.data_base.is_none() {
+            let header = self.info_headers("No data base selected:");
+            return Some(self.home(&header));
+        }
+
+        None
+    }
+
+    fn reset_database(&mut self) {
+        self.data_base = None;
+        self.reset_collection();
+    }
+
+    fn reset_collection(&mut self) {
+        self.collection = None;
+        self.reset_element();
+    }
+
+    fn reset_element(&mut self) {
+        self.element = None
     }
 
 }
