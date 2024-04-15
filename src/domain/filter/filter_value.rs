@@ -56,6 +56,10 @@ impl FilterValue {
         return FilterValue::from_collection(Vec::from(vec![value]));
     }
 
+    pub fn from_root_collection(value: Vec<FilterElement>) -> FilterValue {
+        return FilterValue::from(EFilterCategory::ROOT, String::new(), value);
+    }
+
     pub fn from_collection(value: Vec<FilterElement>) -> FilterValue {
         return FilterValue::from(EFilterCategory::COLLECTION, String::new(), value);
     }
