@@ -16,6 +16,14 @@ impl DataBaseQuery {
         }
     }
 
+    pub fn from_data_base(data_base: String) -> DataBaseQuery {
+        DataBaseQuery {
+            data_base: data_base,
+            collection: String::new(),
+            filter: None
+        }
+    }
+
     pub fn from_filter(data_base: String, collection: String, filter: FilterElement) -> DataBaseQuery {
         DataBaseQuery {
             data_base: data_base,
