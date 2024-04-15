@@ -19,6 +19,11 @@ impl FilterElement {
         return FilterElement::from(String::new(), f_value, false);
     }
 
+    pub fn from_id(key: String, value: String) -> FilterElement {
+        let f_value = FilterValue::from_id(value);
+        return FilterElement::from(key, f_value, false);
+    }
+
     pub fn from_string(key: String, value: String) -> FilterElement {
         let f_value = FilterValue::from_string(value);
         return FilterElement::from(key, f_value, false);

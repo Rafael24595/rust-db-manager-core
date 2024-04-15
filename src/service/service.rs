@@ -19,8 +19,12 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.list_collections(query).await;
     }
 
-    pub async fn find(&self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException> {
+    pub async fn find(&self, query: DataBaseQuery) -> Result<Option<String>, ConnectException> {
         return self.repository.find(query).await;
+    }
+
+    pub async fn find_all_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        return self.repository.find_all_lite(query).await;
     }
 
     pub async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {

@@ -20,6 +20,10 @@ impl FilterValue {
         return FilterValue::from_value(EFilterCategory::QUERY, value);
     }
 
+    pub fn from_id(value: String) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::ID, value);
+    }
+
     pub fn from_string(value: String) -> FilterValue {
         return FilterValue::from_value(EFilterCategory::STRING, value);
     }
