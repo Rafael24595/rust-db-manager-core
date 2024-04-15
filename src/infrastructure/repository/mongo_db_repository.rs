@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use mongodb::{bson::Document, options::{AggregateOptions, ClientOptions}, Client, Collection, Database};
 
+use futures_util::stream::StreamExt;
+
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
@@ -104,8 +106,35 @@ impl IDBRepository for MongoDbRepository {
         todo!()
     }
 
-    fn find_all(&self, query: DataBaseQuery) -> Vec<String> {
-        todo!()
+    async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        let collection = self.collection(&query);
+
+        let r_cursor = collection.find(None, None).await;
+        if r_cursor.is_err() {
+            let exception = ConnectException::new(r_cursor.err().unwrap().to_string());
+            return Err(exception);
+        }
+
+        let mut elements = Vec::<String>::new();
+        
+        let mut cursor = r_cursor.ok().unwrap();
+        while let Some(result) = cursor.next().await {
+            if result.is_err() {
+                let exception = ConnectException::new(result.err().unwrap().to_string());
+                return Err(exception);
+            }
+
+            let document = result.ok().unwrap();
+
+            let json = serde_json::to_string(&document);
+            if json.is_err() {
+                let exception = ConnectException::new(json.err().unwrap().to_string());
+                return Err(exception);
+            }
+            elements.push(json.ok().unwrap());
+        }
+
+        Ok(elements)
     }
 
     fn insert(&self, query: DataBaseQuery, value: String) -> Vec<u8> {

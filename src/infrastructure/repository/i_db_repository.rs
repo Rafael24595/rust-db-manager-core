@@ -10,7 +10,7 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     fn info(&self) -> Vec<u8>;
     async fn find(&self, query: DataBaseQuery) -> Result<Vec<u8>, ConnectException>;
-    fn find_all(&self, query: DataBaseQuery) -> Vec<String>;
+    async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     fn insert(&self, query: DataBaseQuery, value: String) -> Vec<u8>;
     fn update(&self, query: DataBaseQuery, value: String) -> Vec<u8>;
     fn delete(&self, query: DataBaseQuery) -> Vec<u8>;
