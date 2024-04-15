@@ -160,7 +160,7 @@ impl IDBRepository for MongoDbRepository {
 
             let id = document.get("_id");
             if id.is_some() {
-                elements.push(id.unwrap().to_string());
+                elements.push(format!("_id={}", id.unwrap().to_string()));
             }
         }
 

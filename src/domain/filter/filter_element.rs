@@ -71,6 +71,23 @@ impl FilterElement {
         };
     }
 
+    pub fn from_id_chain(chain: String) -> FilterElement {
+        let keys: Vec<&str> = chain.split('#').collect();
+
+        let mut filter = FilterElement::new();
+
+        for key in keys {
+            let entry: Vec<&str> = key.split('=').collect();
+            if entry.len() > 1 {
+                let code = String::from(*entry.get(0).unwrap());
+                let value = String::from(*entry.get(1).unwrap());
+                filter = filter.push(FilterElement::from_id(code, value));
+            }
+        }
+
+        return filter;
+    }
+
 }
 
 impl FilterElement {

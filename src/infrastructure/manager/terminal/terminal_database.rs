@@ -373,7 +373,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
             return self.home(&header);
         }
 
-        let filter = FilterElement::from_id(String::from("_id"), self.element.clone().unwrap());
+        let filter = FilterElement::from_id_chain(self.element.clone().unwrap());
         let query = DataBaseQuery::from_filter(self.data_base.clone().unwrap(), self.collection.clone().unwrap(), filter);
 
         let result = self.service.find(query).await;
