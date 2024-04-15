@@ -236,8 +236,51 @@ impl IDBRepository for MongoDbRepository {
         todo!()
     }
 
-    fn delete(&self, query: DataBaseQuery) -> Vec<u8> {
-        todo!()
+    async fn delete(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        let collection = self.collection(&query);
+    
+        let mut filter = FilterElement::new();
+    
+        let o_filter = query.filter();
+        if o_filter.is_some() {
+            filter = o_filter.unwrap();
+        }
+    
+        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
+        if pipeline.is_err() {
+            return Err(pipeline.err().unwrap());
+        }
+    
+        let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
+        if r_cursor.is_err() {
+            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
+            return Err(exception);
+        }
+    
+        let mut cursor = r_cursor.ok().unwrap();
+        let mut elements_deleted = Vec::<String>::new();
+
+        while let Some(r_document) = cursor.next().await {
+            if r_document.is_err() {
+                let exception = ConnectException::new(r_document.unwrap_err().to_string());
+                return Err(exception);
+            }
+    
+            let document = r_document.unwrap();
+    
+            let result = collection.delete_one(document.clone(), None).await;
+            if result.is_err() {
+                let exception = ConnectException::new(result.unwrap_err().to_string());
+                return Err(exception);
+            }
+
+            let id = document.get("_id");
+            if id.is_some() {
+                elements_deleted.push(format!("_id={}", id.unwrap().to_string()));
+            }
+        }
+     Ok(elements_deleted)
     }
+    
 
 }

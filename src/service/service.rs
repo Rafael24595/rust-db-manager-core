@@ -35,4 +35,8 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.insert(query, value).await;
     }
 
+    pub async fn delete(&self, query: DataBaseQuery) -> Result<Vec<String>,ConnectException>{
+        return self.repository.delete(query).await;
+    }
+
 }
