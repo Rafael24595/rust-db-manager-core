@@ -23,4 +23,12 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.find(query).await;
     }
 
+    pub async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        return self.repository.find_all(query).await;
+    }
+
+    pub async fn insert(&self, query: DataBaseQuery, value:String) -> Result<String,ConnectException>{
+        return self.repository.insert(query, value).await;
+    }
+
 }

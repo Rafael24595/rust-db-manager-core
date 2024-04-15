@@ -1,7 +1,15 @@
 use async_trait::async_trait;
-use mongodb::{bson::Document, options::{AggregateOptions, ClientOptions}, Client, Collection, Database};
+use mongodb::{
+    bson::{to_document,  Document},
+    options::{AggregateOptions, ClientOptions},
+    Client, Collection, Database
+};
 
 use futures_util::stream::StreamExt;
+use serde_json::{
+    from_str, 
+    Value
+};
 
 use crate::{
     commons::exception::connect_exception::ConnectException, 
@@ -80,7 +88,7 @@ impl IDBRepository for MongoDbRepository {
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let result = self.data_base(&query).list_collection_names(None).await;
         if result.is_err() {
-            let exception = ConnectException::new(result.err().unwrap().to_string());
+            let exception = ConnectException::new(result.unwrap_err().to_string());
             return Err(exception);
         }
         return Ok(result.ok().unwrap());
@@ -111,7 +119,7 @@ impl IDBRepository for MongoDbRepository {
 
         let r_cursor = collection.find(None, None).await;
         if r_cursor.is_err() {
-            let exception = ConnectException::new(r_cursor.err().unwrap().to_string());
+            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
             return Err(exception);
         }
 
@@ -120,7 +128,7 @@ impl IDBRepository for MongoDbRepository {
         let mut cursor = r_cursor.ok().unwrap();
         while let Some(result) = cursor.next().await {
             if result.is_err() {
-                let exception = ConnectException::new(result.err().unwrap().to_string());
+                let exception = ConnectException::new(result.unwrap_err().to_string());
                 return Err(exception);
             }
 
@@ -128,7 +136,7 @@ impl IDBRepository for MongoDbRepository {
 
             let json = serde_json::to_string(&document);
             if json.is_err() {
-                let exception = ConnectException::new(json.err().unwrap().to_string());
+                let exception = ConnectException::new(json.unwrap_err().to_string());
                 return Err(exception);
             }
             elements.push(json.ok().unwrap());
@@ -137,8 +145,38 @@ impl IDBRepository for MongoDbRepository {
         Ok(elements)
     }
 
-    fn insert(&self, query: DataBaseQuery, value: String) -> Vec<u8> {
-        todo!()
+    async fn insert(&self, query: DataBaseQuery, value: String) -> Result<String,ConnectException> {
+        let collection = self.collection(&query);
+
+        let json: Result<Value, _> = from_str(&value);
+
+        if json.is_err() {
+            let error_message = format!("Invalid JSON format: {}", json.err().unwrap());
+            let exception = ConnectException::new(error_message);
+            return Err(exception);
+        }
+
+        let document = to_document(&json.unwrap());
+
+        if document.is_err(){
+            let err = format!("Failed to convert JSON to BSON: {}", document.unwrap_err());
+            return Err(ConnectException::new(err));
+        }
+
+
+        let result = collection.insert_one(document.unwrap(), None).await;
+        if result.is_err() {
+            let err = format!("Could not insert into database: {}", result.err().unwrap());
+            return Err(ConnectException::new(err));
+        }
+
+        let id =result.unwrap().inserted_id.as_object_id();
+        if id.is_none(){
+            let err = format!("Failed to get ID");
+            return Err(ConnectException::new(err));
+        }
+
+        Ok(id.unwrap().to_string())
     }
 
     fn update(&self, query: DataBaseQuery, value: String) -> Vec<u8> {
