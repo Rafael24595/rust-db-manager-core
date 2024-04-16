@@ -11,8 +11,16 @@ impl <T: IDBRepository> Service<T> {
         Service { repository }
     }
 
+    pub async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
+        return self.repository.data_base_exists(query).await;
+    }
+
     pub async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
         return self.repository.list_data_bases().await;
+    }
+
+    pub async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
+        return self.repository.collection_exists(query).await;
     }
 
     pub async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {

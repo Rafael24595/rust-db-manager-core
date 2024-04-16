@@ -1,5 +1,6 @@
 use super::filter_element::FilterElement;
 
+#[derive(Clone)]
 pub struct DataBaseQuery {
     data_base: String,
     collection: String,

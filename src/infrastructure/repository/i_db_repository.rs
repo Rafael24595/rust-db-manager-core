@@ -6,7 +6,9 @@ use crate::{commons::exception::connect_exception::ConnectException, domain::fil
 pub trait IDBRepository: Clone + Send + Sync {
     //TODO: Replace bytes vector returns with specific entities.
     async fn status(&self) -> Result<(), ConnectException>;
+    async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException>;
     async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException>;
+    async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException>;
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     fn info(&self) -> Vec<u8>;
     async fn find(&self, query: DataBaseQuery) -> Result<Option<String>, ConnectException>;

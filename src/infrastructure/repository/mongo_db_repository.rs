@@ -74,6 +74,11 @@ impl IDBRepository for MongoDbRepository {
         todo!()
     }
 
+    async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
+        let databases = self.list_data_bases().await?;
+        Ok(databases.iter().any(|name| name == &query.data_base()))
+    }
+
     async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
         let result = self.client.list_database_names(None, None).await;
         if result.is_err() {
@@ -81,6 +86,11 @@ impl IDBRepository for MongoDbRepository {
             return Err(exception);
         }
         return Ok(result.ok().unwrap());
+    }
+
+    async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
+        let collections = self.list_collections(query.clone()).await?;
+        Ok(collections.iter().any(|name| name == &query.collection()))
     }
 
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
