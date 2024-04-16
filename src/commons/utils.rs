@@ -119,7 +119,7 @@ impl FilterValue {
     pub fn as_mongo_agregate(&self, registry: QueryItems) -> (String, QueryItems) {
         let value = self.value();
         match self.category() {
-            EFilterCategory::ID => (value, registry),
+            EFilterCategory::ID => (format!("\"{}\"", value), registry),
             EFilterCategory::QUERY => (value, registry),
             EFilterCategory::STRING => (format!("\"{}\"", value), registry),
             EFilterCategory::BOOLEAN => (value, registry),

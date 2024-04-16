@@ -1,8 +1,6 @@
 use async_trait::async_trait;
 use mongodb::{
-    bson::{to_document, Document},
-    options::{AggregateOptions, ClientOptions},
-    Client, Collection, Database
+    bson::{to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
 };
 
 use futures_util::stream::StreamExt;
@@ -95,61 +93,17 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn find(&self, query: DataBaseQuery) -> Result<Option<String>, ConnectException> {
-        let collection = self.collection(&query);
-        
-        let mut filter = FilterElement::new();
-
-        let o_filter = query.filter();
-        if o_filter.is_some() {
-            filter = o_filter.unwrap();
+        let o_result = self.find_query(query).await;
+        if o_result.is_err() {
+            return Err(o_result.unwrap_err());
         }
-
-        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
-        if pipeline.is_err() {
-            return Err(pipeline.err().unwrap());
-        }
-    
-        let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
-        if r_cursor.is_err() {
-            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
-            return Err(exception);
-        }
-
-        let mut cursor = r_cursor.ok().unwrap();
-
-        let r_document = cursor.next().await;
-        if r_document.is_none() {
-            return Ok(None);
-        }
-
-        let document = r_document.unwrap();
-
-        if document.is_err() {
-            let exception = ConnectException::new(document.unwrap_err().to_string());
-            return Err(exception);
-        }
-
-        let json = serde_json::to_string(&document.unwrap());
-        if json.is_err() {
-            let exception = ConnectException::new(json.unwrap_err().to_string());
-            return Err(exception);
-        }
-
-        Ok(Some(json.unwrap()))
+        Ok(o_result.unwrap().first().cloned())
     }
 
-    async fn find_all_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        let collection = self.collection(&query);
-
-        let r_cursor = collection.find(None, None).await;
-        if r_cursor.is_err() {
-            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
-            return Err(exception);
-        }
-
+    async fn find_query_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let mut elements = Vec::<String>::new();
         
-        let mut cursor = r_cursor.ok().unwrap();
+        let mut cursor = self.find_cursor(query).await?;
         while let Some(result) = cursor.next().await {
             if result.is_err() {
                 let exception = ConnectException::new(result.unwrap_err().to_string());
@@ -167,18 +121,10 @@ impl IDBRepository for MongoDbRepository {
         Ok(elements)
     }
 
-    async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        let collection = self.collection(&query);
-
-        let r_cursor = collection.find(None, None).await;
-        if r_cursor.is_err() {
-            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
-            return Err(exception);
-        }
-
+    async fn find_query(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let mut elements = Vec::<String>::new();
         
-        let mut cursor = r_cursor.ok().unwrap();
+        let mut cursor = self.find_cursor(query).await?;
         while let Some(result) = cursor.next().await {
             if result.is_err() {
                 let exception = ConnectException::new(result.unwrap_err().to_string());
@@ -196,6 +142,14 @@ impl IDBRepository for MongoDbRepository {
         }
 
         Ok(elements)
+    }
+
+    async fn find_all_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        return self.find_query_lite(query).await;
+    }
+
+    async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        return self.find_query(query).await;
     }
 
     async fn insert(&self, query: DataBaseQuery, value: String) -> Result<String,ConnectException> {
@@ -238,28 +192,10 @@ impl IDBRepository for MongoDbRepository {
 
     async fn delete(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let collection = self.collection(&query);
-    
-        let mut filter = FilterElement::new();
-    
-        let o_filter = query.filter();
-        if o_filter.is_some() {
-            filter = o_filter.unwrap();
-        }
-    
-        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
-        if pipeline.is_err() {
-            return Err(pipeline.err().unwrap());
-        }
-    
-        let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
-        if r_cursor.is_err() {
-            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
-            return Err(exception);
-        }
-    
-        let mut cursor = r_cursor.ok().unwrap();
+
         let mut elements_deleted = Vec::<String>::new();
 
+        let mut cursor = self.find_cursor(query).await?;
         while let Some(r_document) = cursor.next().await {
             if r_document.is_err() {
                 let exception = ConnectException::new(r_document.unwrap_err().to_string());
@@ -282,5 +218,32 @@ impl IDBRepository for MongoDbRepository {
      Ok(elements_deleted)
     }
     
+}
+
+impl MongoDbRepository {
+    
+    async fn find_cursor(&self, query: DataBaseQuery) -> Result<Cursor<Document>, ConnectException>  {
+        let collection = self.collection(&query);
+
+        let mut filter = FilterElement::new();
+
+        let o_filter = query.filter();
+        if o_filter.is_some() {
+            filter = o_filter.unwrap();
+        }
+
+        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
+        if pipeline.is_err() {
+            return Err(pipeline.err().unwrap());
+        }
+    
+        let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
+        if r_cursor.is_err() {
+            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
+            return Err(exception);
+        }
+
+        return Ok(r_cursor.unwrap());
+    }
 
 }

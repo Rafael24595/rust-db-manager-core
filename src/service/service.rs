@@ -23,6 +23,14 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.find(query).await;
     }
 
+    pub async fn find_query_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        return self.repository.find_query_lite(query).await;
+    }
+
+    pub async fn find_query(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+        return self.repository.find_query(query).await;
+    }
+
     pub async fn find_all_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.find_all_lite(query).await;
     }
