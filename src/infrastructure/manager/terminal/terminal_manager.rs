@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use crossterm::event::{read, Event, KeyCode, KeyEventKind};
 
-use super::{i_manager::IManager, terminal_cursor::TerminalCursor};
+use super::{i_manager::IManager, terminal_cursor::TerminalCursor, terminal_option::TerminalOption};
 
 pub(crate) const ANSI_COLOR_RESET: &'static str = "\x1b[0m";
 pub(crate) const ANSI_BACKGROUND_WHITE: &'static str = "\x1b[47m";
@@ -24,10 +24,8 @@ impl <T: IManager> TerminalManager<T> {
         self.hide_cursor();
 
         loop {
-
             self.clear_screen();
-
-            self.print();
+            self.print(false);
 
             let key_event = match read()? {
                 Event::Key(event) => event,
@@ -49,8 +47,21 @@ impl <T: IManager> TerminalManager<T> {
                         }
 
                         self.cursor = update.unwrap();
-
                     },
+                    KeyCode::Char('t') => {
+                        self.clear_screen();
+                        self.print(true);
+
+                        let input = self.keyboard_input();
+                        
+                        let update: Option<TerminalCursor<T>> = self.manage_query(input).await;
+                        if update.is_none() {
+                            println!("Something goes wrong!");
+                            break;
+                        }
+
+                        self.cursor = update.unwrap();
+                    }
                     KeyCode::Esc => {
                         println!("Exit");
                         break;
@@ -64,19 +75,35 @@ impl <T: IManager> TerminalManager<T> {
 
     }
 
+    fn keyboard_input(&self) -> String {
+        self.show_cursor();
+
+        let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
+        self.hide_cursor();
+
+        return input;
+    }
+
     fn clear_screen(&self) {
         print!("\x1b[2J\x1b[1;1H");
+        let _ = io::stdout().flush();
     }
     
     fn hide_cursor(&self) {
         print!("\x1b[?25l");
+        let _ = io::stdout().flush();
     }
     
     fn show_cursor(&self) {
         print!("\x1b[?25h");
+        let _ = io::stdout().flush();
     }
 
-    fn print(&mut self) {
+    fn print(&mut self, sw_ignore_focus: bool) {
 
         print!("{}\n\n", self.cursor.header());
 
@@ -85,14 +112,15 @@ impl <T: IManager> TerminalManager<T> {
             let position = cursor.1;
 
             let mut title = position.title();
-            if position.is_focused() {
+            if !sw_ignore_focus && position.is_focused() {
                 title = format!("{}{}{}", ANSI_BACKGROUND_WHITE, title, ANSI_COLOR_RESET);
             }
             print!("{}.- {}.\n", index + 1, title);
         }
 
-        let _ = io::stdout().flush();
+        print!("\n");
 
+        let _ = io::stdout().flush();
     }
 
     async fn manage(&mut self) -> Option<TerminalCursor<T>> {
@@ -102,6 +130,13 @@ impl <T: IManager> TerminalManager<T> {
             return Some(option.execute().await);
         }
         None
+    }
+
+    async fn manage_query(&mut self, query: String) -> Option<TerminalCursor<T>> {
+        let manager = self.cursor.manager();
+        let args = Vec::from(vec![query.clone()]);
+        let mut option = TerminalOption::from_input(args, manager);
+        return Some(option.execute().await);
     }
 
 }

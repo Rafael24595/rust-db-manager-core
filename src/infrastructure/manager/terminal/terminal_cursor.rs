@@ -2,6 +2,7 @@ use super::{i_manager::IManager, terminal_option::TerminalOption};
 
 #[derive(Clone)]
 pub struct TerminalCursor<T: IManager> {
+    manager: T,
     header: String,
     options: Vec<TerminalOption<T>>,
     cursor: usize,
@@ -9,12 +10,17 @@ pub struct TerminalCursor<T: IManager> {
 
 impl <T: IManager> TerminalCursor<T> {
     
-    pub fn new(header: &str) -> Self {
+    pub fn new(manager: T, header: &str) -> Self {
         TerminalCursor {
+            manager: manager,
             header: String::from(header),
             options: Vec::new(),
             cursor: 0
         }
+    }
+
+    pub fn manager(&self) -> T {
+        self.manager.clone()
     }
 
     pub fn header(&self) -> String {

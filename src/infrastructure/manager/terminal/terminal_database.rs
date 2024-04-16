@@ -9,6 +9,8 @@ use super::{i_manager::IManager, terminal_cursor::TerminalCursor, terminal_manag
 const HOME: &'static str = "HOME";
 const STATUS: &'static str = "STATUS";
 
+const TEXT_INPUT: &'static str = "TEXT_INPUT";
+
 const SHOW_DATABASES: &'static str = "SHOW_DATABASES";
 const SELECT_DATABASE_PANEL: &'static str = "SELECT_DATABASE_PANEL";
 const SELECT_DATABASE: &'static str = "SELECT_DATABASE";
@@ -21,23 +23,29 @@ const SHOW_ELEMENTS: &'static str = "SHOW_ELEMENTS";
 const SELECT_ELEMENTS_PANEL: &'static str = "SELECT_ELEMENTS_PANEL";
 const SELECT_ELEMENT: &'static str = "SELECT_ELEMENT";
 
-const SHOW_ELEMENT: &'static str = "SHOW_ELEMENT";
+const SHOW_SELECTED: &'static str = "SHOW_SELECTED";
 
 #[derive(Clone)]
 pub struct TerminalDatabase<T: IDBRepository> {
     service: Service<T>,
     data_base: Option<String>,
     collection: Option<String>,
-    element: Option<String>
+    element: Option<Vec<String>>
 }
 
 #[async_trait]
 impl <T: IDBRepository> IManager for TerminalDatabase<T> {
 
+    fn text_input_option(&self) -> &str {
+        return TEXT_INPUT;
+    }
+
     async fn manage(&self, option: TerminalOption<Self>) -> TerminalCursor<Self> where Self: Sized {
         match option.option().as_str() {
             HOME => self.clone().home(&self.default_header()),
             STATUS => self.clone().status().await,
+
+            TEXT_INPUT => self.clone().translate_query(option).await,
 
             SHOW_DATABASES => self.clone().show_databases().await,
             SELECT_DATABASE_PANEL => self.clone().select_database_panel().await,
@@ -51,7 +59,7 @@ impl <T: IDBRepository> IManager for TerminalDatabase<T> {
             SELECT_ELEMENTS_PANEL => self.clone().select_element_panel().await,
             SELECT_ELEMENT => self.clone().select_element(option),
 
-            SHOW_ELEMENT => self.clone().show_element().await,
+            SHOW_SELECTED => self.clone().show_selected().await,
             _ => todo!(),
         }
     }
@@ -92,7 +100,16 @@ impl <T: IDBRepository> TerminalDatabase<T> {
         }
 
         if self.element.is_some() {
-            headers.push(format!("* Selected element '{}'.", self.element.as_ref().unwrap()));
+            let collection = self.element.as_ref().unwrap()
+                .iter()
+                .map(|i| format!("'{}'", i))
+                .collect::<Vec<String>>();
+
+            if collection.len() > 1 {
+                headers.push(format!("* Selected elements: {}.", collection.join(", ")));
+            } else if collection.len() == 1 {
+                headers.push(format!("* Selected element {}.", collection.get(0).unwrap()));
+            }
         }
 
         if headers.is_empty() {
@@ -103,7 +120,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
     }
 
     fn home(&self, header: &str) -> TerminalCursor<Self> {
-        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(header);
+        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(self.clone(), header);
 
         cursor.push(TerminalOption::from(String::from("Show databases"), SHOW_DATABASES, self.clone()));
         cursor.push(TerminalOption::from(String::from("Select database"), SELECT_DATABASE_PANEL, self.clone()));
@@ -119,14 +136,14 @@ impl <T: IDBRepository> TerminalDatabase<T> {
         }
 
         if self.element.is_some() {
-            cursor.push(TerminalOption::from(String::from("Show element"), SHOW_ELEMENT, self.clone()));
+            cursor.push(TerminalOption::from(String::from("Show selected"), SHOW_SELECTED, self.clone()));
         }
 
         cursor
     }
 
     async fn status(self) -> TerminalCursor<Self> {
-        let cursor = TerminalCursor::new("//TODO:");
+        let cursor = TerminalCursor::new(self.clone(), "//TODO:");
         cursor
     }
 
@@ -168,7 +185,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
             vector = result.ok().unwrap();
         }
 
-        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(&header);
+        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(self.clone(), &header);
 
         for element in vector {
             let args = Vec::from(vec![element.clone()]);
@@ -244,7 +261,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
             vector = result.ok().unwrap();
         }
 
-        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(&header);
+        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(self.clone(), &header);
 
         for element in vector {
             let args = Vec::from(vec![element.clone()]);
@@ -319,7 +336,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
             vector = result.ok().unwrap();
         }
 
-        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(&header);
+        let mut cursor: TerminalCursor<Self> = TerminalCursor::new(self.clone(), &header);
 
         for element in vector {
             let args = Vec::from(vec![element.clone()]);
@@ -335,7 +352,7 @@ impl <T: IDBRepository> TerminalDatabase<T> {
         let args = option.args();
         if args.len() > 0 {
             let element = args.get(0).unwrap().to_string();
-            self.element = Some(element);
+            self.element = Some(Vec::from(vec![element]));
         } else {
             self.reset_element();
         }
@@ -343,30 +360,150 @@ impl <T: IDBRepository> TerminalDatabase<T> {
         self.home(&self.default_header())
     }
 
-    async fn show_element(&self) -> TerminalCursor<Self> {
+    async fn show_selected(&self) -> TerminalCursor<Self> {
         if let Some(error) = self.verify_element() {
             return error;
         }
 
-        let filter = FilterElement::from_id_chain(self.element.clone().unwrap());
+        let filter = FilterElement::from_id_chain_collection(self.element.clone().unwrap());
         let query = DataBaseQuery::from_filter(self.data_base.clone().unwrap(), self.collection.clone().unwrap(), filter);
 
-        let result = self.service.find(query).await;
-        if result.is_err() {
-            let header = self.info_headers(&format!("Cannot find enlement: {}", result.unwrap_err().to_string()));
+        let r_elements = self.service.find_query(query).await;
+        if r_elements.is_err() {
+            let header = self.info_headers(&format!("Cannot find enlement: {}", r_elements.unwrap_err().to_string()));
             return self.home(&header);
         }
 
-        let document = result.unwrap();
-        if document.is_none() {
-            let header = self.info_headers("Element not found.");
-            return self.home(&header);
+        let mut elements = r_elements.unwrap();
+
+        if elements.len() == 1 {
+            let header = self.info_headers("Item:");
+            return self.home(&format!("{}\n\n{}", header, elements.remove(0)));
         }
 
-        let header = self.info_headers("Item:");
-        self.home(&format!("{}\n\n{}", header, document.unwrap()))
+        elements = elements.iter()
+            .map(|e| format!(" {}{}{}", terminal_manager::ANSI_BOLD, e, terminal_manager::ANSI_COLOR_RESET))
+            .collect::<Vec<String>>();
+
+        let header = self.info_headers("Items:");
+        self.home(&format!("{}\n\n{}", header, elements.join("\n\n")))
     }
     
+
+    async fn translate_query(&mut self, option: TerminalOption<Self>) -> TerminalCursor<Self> {
+        let args = option.args();
+        if args.len() == 0 {
+            return self.home(&self.default_header());
+        }
+
+        let mut fragments = args.get(0).unwrap().split(">").map(|f| String::from(f)).collect::<Vec<String>>();
+        let first = String::from(fragments.remove(0).trim());
+
+        if fragments.len() == 0 {
+            return self.home(&self.default_header());
+        }
+
+        if first.is_empty() || first == "*" {
+            return self.translate_path(first, fragments).await;
+        }
+
+        return self.home(&self.default_header());
+    }
+
+    async fn translate_path(&mut self, first: String, fragments: Vec<String>) -> TerminalCursor<Self> {
+        if first == "*" {
+            return self.translate_query_path(fragments, false).await;
+        }
+
+        return self.translate_query_path(fragments, true).await;
+    }
+
+    async fn translate_query_path(&mut self, fragments: Vec<String>, sw_relative: bool) -> TerminalCursor<Self> {
+        let (fragments, result) = self.translate_query_path_database(fragments, sw_relative).await;
+        if result.is_some() {
+            return result.unwrap();
+        }
+
+        let (fragments, result) = self.translate_query_path_collection(fragments, sw_relative).await;
+        if result.is_some() {
+            return result.unwrap();
+        }
+
+        let (fragments, result) = self.translate_query_path_elements(fragments, sw_relative).await;
+        if result.is_some() {
+            return result.unwrap();
+        }
+
+        return self.translate_query_path_all(fragments, sw_relative).await;
+    }
+
+
+    async fn translate_query_path_database(&mut self, mut fragments: Vec<String>, sw_relative: bool) -> (Vec<String>, Option<TerminalCursor<Self>>) {
+        let update = !sw_relative || (sw_relative && self.data_base.is_none()) && fragments.len() != 0;
+        if update {
+            let step = String::from(fragments.remove(0).trim());
+            self.data_base = Some(step);
+        }
+        (fragments, None)
+    }
+
+    async fn translate_query_path_collection(&mut self, mut fragments: Vec<String>, sw_relative: bool) -> (Vec<String>, Option<TerminalCursor<Self>>) {
+        let update = !sw_relative || (sw_relative && self.collection.is_none()) && fragments.len() != 0;
+        let evalue =  !sw_relative || (sw_relative && fragments.len() == 0) && self.data_base.is_some();
+        if update {
+            let step = String::from(fragments.remove(0).trim());
+            self.collection = Some(step);
+        } else if evalue {
+            let query = DataBaseQuery::from_data_base(self.data_base.clone().unwrap());
+            let result: Result<Vec<String>, crate::commons::exception::connect_exception::ConnectException> = self.service.list_collections(query).await;
+            if result.is_err() {
+                self.reset_database();
+                return (fragments, Some(self.home(&self.info_headers("Cannot understand input query."))));
+            }
+            return (fragments, Some(self.home(&self.default_header())));
+        }
+        (fragments, None)
+    }
+
+    async fn translate_query_path_elements(&mut self, mut fragments: Vec<String>, sw_relative: bool) -> (Vec<String>, Option<TerminalCursor<Self>>) {
+        let update = !sw_relative || (sw_relative && self.element.is_none()) && fragments.len() != 0;
+        let evalue =  !sw_relative || (sw_relative && fragments.len() == 0) && self.data_base.is_some() && self.collection.is_some();
+        if update {
+            let result = String::from(fragments.remove(0).trim());
+            let step = String::from(result)
+                .split(",")
+                .map(|id| String::from(id.trim()))
+                .collect::<Vec<String>>();
+            self.element = Some(step);
+        } else if evalue {
+            let query = DataBaseQuery::from(self.data_base.clone().unwrap(), self.collection.clone().unwrap());
+            let result: Result<Vec<String>, crate::commons::exception::connect_exception::ConnectException> = self.service.find_all_lite(query).await;
+            if result.is_err() {
+                self.reset_collection();
+                return (fragments, Some(self.home(&self.info_headers("Cannot understand input query."))));
+            }
+            return (fragments, Some(self.home(&self.default_header())));
+        }
+        (fragments, None)
+    }
+
+    async fn translate_query_path_all(&mut self, fragments: Vec<String>, sw_relative: bool) -> TerminalCursor<Self> {
+        if sw_relative && fragments.len() != 0 || self.data_base.is_none() || self.collection.is_none() || self.element.is_none() {
+            self.reset_database();
+            return self.home(&self.info_headers("Cannot understand input query."));
+        }
+
+        let filter = FilterElement::from_id_chain_collection(self.element.clone().unwrap());
+        let query = DataBaseQuery::from_filter(self.data_base.clone().unwrap(), self.collection.clone().unwrap(), filter);
+        
+        let result = self.service.find(query).await;
+        if result.is_err() {
+            self.reset_element();
+            return self.home(&self.info_headers("Cannot understand input query."));
+        }
+
+        self.home(&self.default_header())
+    }
     
     fn verify_element(&self) -> Option<TerminalCursor<Self>> {
         if self.element.is_none() {
