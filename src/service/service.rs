@@ -11,6 +11,10 @@ impl <T: IDBRepository> Service<T> {
         Service { repository }
     }
 
+    pub async fn status(&self) -> Result<(), ConnectException> {
+        return self.repository.status().await;
+    }
+
     pub async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
         return self.repository.data_base_exists(query).await;
     }

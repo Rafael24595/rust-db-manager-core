@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mongodb::{
-    bson::{to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
+    bson::{doc, to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
 };
 
 use futures_util::stream::StreamExt;
@@ -12,8 +12,7 @@ use serde_json::{
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
-        connection_data::ConnectionData, 
-        filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}
+        connection_data::ConnectionData, data_base_info::DataBaseInfo, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_data_base_query::GenerateDataBaseQuery}
     }
 };
 
@@ -56,27 +55,53 @@ impl MongoDbRepository {
         return self.data_base(query).collection(&collection);
     }
 
+    async fn find_cursor(&self, query: DataBaseQuery) -> Result<Cursor<Document>, ConnectException>  {
+        let collection = self.collection(&query);
+
+        let mut filter = FilterElement::new();
+
+        let o_filter = query.filter();
+        if o_filter.is_some() {
+            filter = o_filter.unwrap();
+        }
+
+        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
+        if pipeline.is_err() {
+            return Err(pipeline.err().unwrap());
+        }
+    
+        let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
+        if r_cursor.is_err() {
+            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
+            return Err(exception);
+        }
+
+        return Ok(r_cursor.unwrap());
+    }
+
 }
 
 #[async_trait]
 impl IDBRepository for MongoDbRepository {
 
     async fn status(&self) -> Result<(), ConnectException> {
-        let result = self.client.list_database_names(None, None).await;
-        if result.is_err() {
-            let exception = ConnectException::new(result.err().unwrap().to_string());
-            return Err(exception);
-        }
+        let _ = self.list_data_bases().await?;
         return Ok(());
     }
 
-    fn info(&self) -> Vec<u8> {
+    async fn info(&self) -> DataBaseInfo {
+        let server_info = self.client.database("admin")
+            .run_command(doc! {"serverStatus": 1}, None).await.unwrap();
         todo!()
     }
 
     async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
         let databases = self.list_data_bases().await?;
         Ok(databases.iter().any(|name| name == &query.data_base()))
+    }
+
+    async fn create_data_base(&self, query: GenerateDataBaseQuery) -> String {
+        todo!()
     }
 
     async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
@@ -91,6 +116,10 @@ impl IDBRepository for MongoDbRepository {
     async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
         let collections = self.list_collections(query.clone()).await?;
         Ok(collections.iter().any(|name| name == &query.collection()))
+    }
+
+    async fn create_collection(&self, query: GenerateCollectionQuery) -> String {
+        todo!()
     }
 
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
@@ -162,7 +191,7 @@ impl IDBRepository for MongoDbRepository {
         return self.find_query(query).await;
     }
 
-    async fn insert(&self, query: DataBaseQuery, value: String) -> Result<String,ConnectException> {
+    async fn insert(&self, query: DataBaseQuery, value: String) -> Result<String, ConnectException> {
         let collection = self.collection(&query);
 
         let json: Result<Value, _> = from_str(&value);
@@ -196,7 +225,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(id.unwrap().to_string())
     }
 
-    fn update(&self, query: DataBaseQuery, value: String) -> Vec<u8> {
+    async fn update(&self, query: DataBaseQuery, value: String) -> Vec<u8> {
         todo!()
     }
 
@@ -228,32 +257,4 @@ impl IDBRepository for MongoDbRepository {
      Ok(elements_deleted)
     }
     
-}
-
-impl MongoDbRepository {
-    
-    async fn find_cursor(&self, query: DataBaseQuery) -> Result<Cursor<Document>, ConnectException>  {
-        let collection = self.collection(&query);
-
-        let mut filter = FilterElement::new();
-
-        let o_filter = query.filter();
-        if o_filter.is_some() {
-            filter = o_filter.unwrap();
-        }
-
-        let pipeline: Result<Vec<Document>, ConnectException> = filter.as_mongo_agregate();
-        if pipeline.is_err() {
-            return Err(pipeline.err().unwrap());
-        }
-    
-        let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
-        if r_cursor.is_err() {
-            let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
-            return Err(exception);
-        }
-
-        return Ok(r_cursor.unwrap());
-    }
-
 }

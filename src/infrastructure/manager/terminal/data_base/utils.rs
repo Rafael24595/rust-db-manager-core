@@ -1,4 +1,4 @@
-use crate::{commons::exception::connect_exception::ConnectException, domain::filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, infrastructure::{manager::terminal::{terminal_cursor::TerminalCursor, terminal_option::TerminalOption}, repository::i_db_repository::IDBRepository}};
+use crate::{commons::exception::connect_exception::ConnectException, domain::filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, infrastructure::{manager::terminal::{terminal_cursor::TerminalCursor, terminal_manager, terminal_option::TerminalOption}, repository::i_db_repository::IDBRepository}};
 
 use super::manager_database::{self, ManagerDatabase};
 
@@ -12,11 +12,11 @@ impl <T: IDBRepository> ManagerDatabase<T> {
         let mut headers = Vec::<String>::new();
 
         if self.data_base.is_some() {
-            headers.push(format!("* Selected data base '{}'.", self.data_base.as_ref().unwrap()));
+            headers.push(format!("{}* Selected data base '{}'.{}", terminal_manager::ANSI_COLOR_YELLOW, self.data_base.as_ref().unwrap(), terminal_manager::ANSI_RESET));
         }
 
         if self.collection.is_some() {
-            headers.push(format!("* Selected collection '{}'.", self.collection.as_ref().unwrap()));
+            headers.push(format!("{}* Selected collection '{}'.{}", terminal_manager::ANSI_COLOR_YELLOW, self.collection.as_ref().unwrap(), terminal_manager::ANSI_RESET));
         }
 
         if self.element.is_some() {
@@ -26,9 +26,9 @@ impl <T: IDBRepository> ManagerDatabase<T> {
                 .collect::<Vec<String>>();
 
             if collection.len() > 1 {
-                headers.push(format!("* Selected elements: {}.", collection.join(", ")));
+                headers.push(format!("{}* Selected elements: {}.{}", terminal_manager::ANSI_COLOR_YELLOW, collection.join(", "), terminal_manager::ANSI_RESET));
             } else if collection.len() == 1 {
-                headers.push(format!("* Selected element {}.", collection.get(0).unwrap()));
+                headers.push(format!("{}* Selected element {}.{}", terminal_manager::ANSI_COLOR_YELLOW, collection.get(0).unwrap(), terminal_manager::ANSI_RESET));
             }
         }
 
@@ -42,6 +42,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
     pub fn home(&self, header: &str) -> TerminalCursor<Self> {
         let mut cursor: TerminalCursor<Self> = TerminalCursor::new(self.clone(), header);
 
+        cursor.push(TerminalOption::from(String::from("Status"), manager_database::STATUS, self.clone()));
         cursor.push(TerminalOption::from(String::from("Show databases"), manager_database::SHOW_DATABASES, self.clone()));
         cursor.push(TerminalOption::from(String::from("Select database"), manager_database::SELECT_DATABASE_PANEL, self.clone()));
 

@@ -11,7 +11,7 @@ use crate::{
     service::service::Service};
 
 const HOME: &'static str = "HOME";
-const STATUS: &'static str = "STATUS";
+pub const STATUS: &'static str = "STATUS";
 
 const TEXT_INPUT: &'static str = "TEXT_INPUT";
 
@@ -89,8 +89,13 @@ impl <T: IDBRepository> ManagerDatabase<T> {
     }
 
     async fn status(self) -> TerminalCursor<Self> {
-        let cursor = TerminalCursor::new(self.clone(), "//TODO:");
-        cursor
+        let headers = &self.default_header();
+        let mut message = format!("{}{} Status OK.{}", terminal_manager::ANSI_COLOR_GREEN, terminal_manager::ANSI_BOLD, terminal_manager::ANSI_RESET);
+        if self.service.status().await.is_err() {
+            message = format!("{}{} Status KO.{}", terminal_manager::ANSI_COLOR_RED, terminal_manager::ANSI_BOLD, terminal_manager::ANSI_RESET);
+        }
+
+        self.home(&format!("{}\n\n{}", headers, message))
     }
 
     async fn show_databases(&self) -> TerminalCursor<Self> {
@@ -108,7 +113,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
 
         let mut elements = Vec::<String>::new();
         for element in vector {
-            elements.push(format!(" - {}{}{}", terminal_manager::ANSI_BOLD, element, terminal_manager::ANSI_COLOR_RESET));
+            elements.push(format!(" - {}{}{}", terminal_manager::ANSI_BOLD, element, terminal_manager::ANSI_RESET));
         }
 
         if !elements.is_empty() {
@@ -179,7 +184,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
 
         let mut elements = Vec::<String>::new();
         for element in vector {
-            elements.push(format!(" - {}{}{}", terminal_manager::ANSI_BOLD, element, terminal_manager::ANSI_COLOR_RESET));
+            elements.push(format!(" - {}{}{}", terminal_manager::ANSI_BOLD, element, terminal_manager::ANSI_RESET));
         }
 
         if !elements.is_empty() {
@@ -256,7 +261,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
 
         let mut elements = Vec::<String>::new();
         for element in vector {
-            elements.push(format!(" - {}{}{}", terminal_manager::ANSI_BOLD, element, terminal_manager::ANSI_COLOR_RESET));
+            elements.push(format!(" - {}{}{}", terminal_manager::ANSI_BOLD, element, terminal_manager::ANSI_RESET));
         }
 
         if !elements.is_empty() {
@@ -333,7 +338,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
         }
 
         elements = elements.iter()
-            .map(|e| format!(" {}{}{}", terminal_manager::ANSI_BOLD, e, terminal_manager::ANSI_COLOR_RESET))
+            .map(|e| format!(" {}{}{}", terminal_manager::ANSI_BOLD, e, terminal_manager::ANSI_RESET))
             .collect::<Vec<String>>();
 
         let header = self.info_headers("Items:");

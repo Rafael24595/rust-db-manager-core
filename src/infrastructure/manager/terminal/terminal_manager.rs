@@ -4,9 +4,13 @@ use crossterm::event::{read, Event, KeyCode, KeyEventKind};
 
 use super::{i_manager::IManager, terminal_cursor::TerminalCursor, terminal_option::TerminalOption};
 
-pub(crate) const ANSI_COLOR_RESET: &'static str = "\x1b[0m";
+pub(crate) const ANSI_RESET: &'static str = "\x1b[0m";
 pub(crate) const ANSI_BACKGROUND_WHITE: &'static str = "\x1b[47m";
 pub(crate) const ANSI_BOLD: &'static str = "\x1b[1m";
+
+pub(crate) const ANSI_COLOR_RED: &'static str = "\x1b[31m";
+pub(crate) const ANSI_COLOR_GREEN: &'static str = "\x1b[32m";
+pub(crate) const ANSI_COLOR_YELLOW: &'static str = "\x1b[33m";
 
 #[derive(Clone)]
 pub struct TerminalManager<T: IManager> {
@@ -113,7 +117,7 @@ impl <T: IManager> TerminalManager<T> {
 
             let mut title = position.title();
             if !sw_ignore_focus && position.is_focused() {
-                title = format!("{}{}{}", ANSI_BACKGROUND_WHITE, title, ANSI_COLOR_RESET);
+                title = format!("{}{}{}", ANSI_BACKGROUND_WHITE, title, ANSI_RESET);
             }
             print!("{}.- {}.\n", index + 1, title);
         }
