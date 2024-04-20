@@ -1,20 +1,20 @@
 #[derive(Clone)]
-pub struct GenerateResourceQuery {
+pub struct GenerateCollectionQuery {
     data_base: String,
     collection: String
 }
 
-impl GenerateResourceQuery {
+impl GenerateCollectionQuery {
 
-    pub fn from_data_base(data_base: String) -> GenerateResourceQuery {
-        GenerateResourceQuery {
+    pub fn from_data_base(data_base: String) -> GenerateCollectionQuery {
+        GenerateCollectionQuery {
             data_base: data_base,
             collection: String::new()
         }
     }
 
-    pub fn new(data_base: String, collection: String) -> GenerateResourceQuery {
-        GenerateResourceQuery {
+    pub fn new(data_base: String, collection: String) -> GenerateCollectionQuery {
+        GenerateCollectionQuery {
             data_base: data_base,
             collection: collection
         }

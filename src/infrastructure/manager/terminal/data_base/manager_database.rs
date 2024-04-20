@@ -3,7 +3,7 @@ use std::vec;
 use async_trait::async_trait;
 
 use crate::{
-    domain::{filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::generate_resource_query::GenerateResourceQuery}, 
+    domain::{filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::generate_database_query::GenerateDatabaseQuery}, 
     infrastructure::{manager::terminal::{
         i_manager::IManager, terminal_cursor::TerminalCursor, terminal_manager::{self, TerminalManager}, terminal_option::TerminalOption}, 
         repository::i_db_repository::IDBRepository
@@ -107,7 +107,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
         let mut header = self.info_headers("Cannot create data base.");
         if args.len() > 0 {
             let data_base = args.get(0).unwrap().trim().to_string();
-            let query = GenerateResourceQuery::from_data_base(data_base);
+            let query = GenerateDatabaseQuery::new(data_base);
             let result = self.service.create_data_base(query).await;
             if result.is_err() {
                 let header = self.info_headers(&result.unwrap_err().message());
@@ -124,7 +124,7 @@ impl <T: IDBRepository> ManagerDatabase<T> {
         let mut header = self.info_headers("Cannot drop data base.");
         if self.data_base.is_some() {
             let data_base = self.data_base.clone().unwrap();
-            let query = GenerateResourceQuery::from_data_base(data_base);
+            let query = GenerateDatabaseQuery::new(data_base);
             let result = self.service.drop_data_base(query).await;
             if result.is_err() {
                 let header = self.info_headers(&result.unwrap_err().message());

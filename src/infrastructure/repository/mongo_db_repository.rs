@@ -13,11 +13,13 @@ use uuid::Uuid;
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
-        connection_data::ConnectionData, data_base_info::DataBaseInfo, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::generate_resource_query::GenerateResourceQuery
+        connection_data::ConnectionData, data_base_info::DataBaseInfo, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
     }
 };
 
 use super::i_db_repository::IDBRepository;
+
+pub const DB_NAME: &str = "MongoDB";
 
 #[derive(Clone)]
 pub struct MongoDbRepository {
@@ -43,6 +45,7 @@ impl MongoDbRepository {
     async fn connect(connection: String) -> Result<Client, mongodb::error::Error> {
         let client_options = ClientOptions::parse(connection).await?;
         let client = Client::with_options(client_options)?;
+
         Ok(client)
     }
 
@@ -50,21 +53,23 @@ impl MongoDbRepository {
     fn collection_from_query(&self, query: &DataBaseQuery) -> Collection<Document> {
         let data_base = query.data_base();        
         let collection = query.collection();
-        return self.data_base(data_base).collection(&collection);
+        
+        self.collection(data_base, collection)
     }
 
-    fn collection_from_resource(&self, query: &GenerateResourceQuery) -> Collection<Document> {
+    fn collection_from_resource(&self, query: &GenerateCollectionQuery) -> Collection<Document> {
         let data_base = query.data_base();        
         let collection = query.collection();
-        return self.data_base(data_base).collection(&collection);
+
+        self.collection(data_base, collection)
     }
 
     fn data_base(&self, data_base: String) -> Database {
-        return self.client.database(&data_base);
+        self.client.database(&data_base)
     }
 
     fn collection(&self, data_base: String, collection: String) -> Collection<Document> {
-        return self.data_base(data_base).collection(&collection);
+        self.data_base(data_base).collection(&collection)
     }
 
     async fn find_cursor(&self, query: DataBaseQuery) -> Result<Cursor<Document>, ConnectException>  {
@@ -88,7 +93,7 @@ impl MongoDbRepository {
             return Err(exception);
         }
 
-        return Ok(r_cursor.unwrap());
+        Ok(r_cursor.unwrap())
     }
 
 }
@@ -104,7 +109,13 @@ impl IDBRepository for MongoDbRepository {
     async fn info(&self) -> DataBaseInfo {
         let server_info = self.client.database("admin")
             .run_command(doc! {"serverStatus": 1}, None).await.unwrap();
-        todo!()
+        let o_version = server_info.get("version");
+        let mut version = String::from("0.0");
+        if o_version.is_none() {
+            version = o_version.unwrap().to_string();
+        }
+
+        DataBaseInfo::new_no_relational(String::from(DB_NAME), version, false, false)
     }
 
     async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
@@ -113,20 +124,20 @@ impl IDBRepository for MongoDbRepository {
         Ok(databases.iter().any(|name| name == &query.data_base()))
     }
 
-    async fn create_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+    async fn create_data_base(&self, query: GenerateDatabaseQuery) -> Result<String, ConnectException> {
         let data_base = query.data_base();
         let temp_col = format!("TEMP_{}", Uuid::new_v4().to_string());
         if self.collection_exists(DataBaseQuery::from(data_base.clone(), temp_col.clone())).await? {
             return self.create_data_base(query).await;
         }
 
-        let query = GenerateResourceQuery::new(data_base.clone(), temp_col);
+        let query = GenerateCollectionQuery::new(data_base.clone(), temp_col);
         let _ = self.create_collection(query).await?;
 
         Ok(data_base)
     }
 
-    async fn drop_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+    async fn drop_data_base(&self, query: GenerateDatabaseQuery) -> Result<String, ConnectException> {
         let data_base = query.data_base();
         let database = self.data_base(data_base.clone());
         let result = database.drop(None).await;
@@ -154,7 +165,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(collections.iter().any(|name| name == &query.collection()))
     }
 
-    async fn create_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+    async fn create_collection(&self, query: GenerateCollectionQuery) -> Result<String, ConnectException> {
         let collection = query.collection();
         let db = self.data_base(query.data_base());
         let result = db.create_collection(query.collection(), None).await;
@@ -166,7 +177,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(collection)
     }
 
-    async fn drop_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+    async fn drop_collection(&self, query: GenerateCollectionQuery) -> Result<String, ConnectException> {
         let collection = self.collection_from_resource(&query);
         let result = collection.drop(None).await;
         if result.is_err() {
