@@ -1,4 +1,4 @@
-use crate::{domain::connection_data::ConnectionData, infrastructure::{manager::terminal::data_base::manager_database::ManagerDatabase, repository::mongo_db_repository::MongoDbRepository}, service::service::Service};
+use crate::{domain::connection_data::ConnectionData, infrastructure::{manager::terminal::data_base::manager_database::ManagerDatabase, repository::{e_db_repository::EDBRepository, mongo_db_repository::MongoDbRepository}}, service::service::Service};
 
 mod commons {
     pub mod exception {
@@ -21,6 +21,8 @@ mod infrastructure {
         }
     }
     pub mod repository {
+        pub mod db_dictionary;
+        pub mod e_db_repository;
         pub mod i_db_repository;
         pub mod mongo_db_repository;
     }
@@ -40,6 +42,7 @@ mod domain {
     }
     pub mod connection_data;
     pub mod data_base_info;
+    pub mod db_service;
 }
 mod service {
     pub mod service;
@@ -47,7 +50,7 @@ mod service {
 
 #[tokio::main]
 async fn main() {
-    let data = ConnectionData::new(String::from("mongodb://root:example@localhost:27017"));
+    let data = ConnectionData::new(EDBRepository::MongoDB, String::from("mongodb://root:example@localhost:27017"));
     let repository = MongoDbRepository::new(data).await.ok().unwrap();
     let service = Service::from(repository);
 
