@@ -48,6 +48,7 @@ impl <T: IManager> TerminalCursor<T> {
                 return Some(option.1);
             }
         }
+        
         None
     }
 

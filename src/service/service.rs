@@ -1,4 +1,4 @@
-use crate::{commons::exception::connect_exception::ConnectException, domain::filter::data_base_query::DataBaseQuery, infrastructure::repository::i_db_repository::IDBRepository};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{filter::data_base_query::DataBaseQuery, generate::generate_resource_query::GenerateResourceQuery}, infrastructure::repository::i_db_repository::IDBRepository};
 
 #[derive(Clone)]
 pub struct Service<T: IDBRepository> {
@@ -19,12 +19,28 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.data_base_exists(query).await;
     }
 
+    pub async fn create_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        return self.repository.create_data_base(query).await;
+    }
+
+    pub async fn drop_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        return self.repository.drop_data_base(query).await;
+    }
+
     pub async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
         return self.repository.list_data_bases().await;
     }
 
     pub async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
         return self.repository.collection_exists(query).await;
+    }
+
+    pub async fn create_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        return self.repository.create_collection(query).await;
+    }
+
+    pub async fn drop_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        return self.repository.drop_collection(query).await;
     }
 
     pub async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {

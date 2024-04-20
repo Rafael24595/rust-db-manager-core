@@ -9,6 +9,7 @@ pub struct TerminalOption<T: IManager> {
     title: String,
     args: Vec<String>,
     manager: T,
+    require_input: bool
 }
 
 impl <T: IManager> TerminalOption<T> {
@@ -29,7 +30,8 @@ impl <T: IManager> TerminalOption<T> {
             focus: false,
             title: title,
             args: args,
-            manager: manager
+            manager: manager,
+            require_input: false
         }
     }
 
@@ -49,6 +51,11 @@ impl <T: IManager> TerminalOption<T> {
         return self.args.clone();
     }
 
+    pub fn push_arg(&mut self, arg: String) -> &Self {
+        self.args.push(arg);
+        self
+    }
+
     pub fn focused(&mut self) -> &Self {
         self.focus = true;
         return self;
@@ -61,6 +68,28 @@ impl <T: IManager> TerminalOption<T> {
 
     pub async fn execute(&mut self) -> TerminalCursor<T> {
         return self.manager.manage(self.clone()).await;
+    }
+
+    pub fn input_required(&mut self) -> bool {
+        self.require_input
+    }
+
+    pub fn require_input(&mut self) -> &Self {
+        self.require_input = true;
+        self
+    }
+
+    pub fn unrequired_input(&mut self) -> &Self {
+        self.require_input = false;
+        self
+    }
+
+    pub fn require_input_ref(&mut self) -> Self {
+        self.require_input().clone()
+    }
+
+    pub fn unrequired_input_ref(&mut self) -> Self {
+        self.unrequired_input().clone()
     }
 
 }

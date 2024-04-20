@@ -945,6 +945,7 @@ dependencies = [
  "mongodb",
  "serde_json",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

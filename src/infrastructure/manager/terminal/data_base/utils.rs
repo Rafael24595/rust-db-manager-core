@@ -43,10 +43,12 @@ impl <T: IDBRepository> ManagerDatabase<T> {
         let mut cursor: TerminalCursor<Self> = TerminalCursor::new(self.clone(), header);
 
         cursor.push(TerminalOption::from(String::from("Status"), manager_database::STATUS, self.clone()));
+        cursor.push(TerminalOption::from(String::from("Create database"), manager_database::CREATE_DATABASE, self.clone()).require_input_ref());
         cursor.push(TerminalOption::from(String::from("Show databases"), manager_database::SHOW_DATABASES, self.clone()));
         cursor.push(TerminalOption::from(String::from("Select database"), manager_database::SELECT_DATABASE_PANEL, self.clone()));
 
         if self.data_base.is_some() {
+            cursor.push(TerminalOption::from(String::from("Drop database"), manager_database::DROP_DATABASE, self.clone()));
             cursor.push(TerminalOption::from(String::from("Show collections"), manager_database::SHOW_COLLECTIONS, self.clone()));
             cursor.push(TerminalOption::from(String::from("Select collection"), manager_database::SELECT_COLLECTION_PANEL, self.clone()));
         }

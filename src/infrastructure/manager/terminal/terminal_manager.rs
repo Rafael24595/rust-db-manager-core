@@ -41,8 +41,6 @@ impl <T: IManager> TerminalManager<T> {
                     KeyCode::Up => {self.cursor.decrease();},
                     KeyCode::Down => {self.cursor.increase();},
                     KeyCode::Enter => {
-                        
-                        println!("\n Please stand by...");
 
                         let update = self.manage().await;
                         if update.is_none() {
@@ -108,7 +106,6 @@ impl <T: IManager> TerminalManager<T> {
     }
 
     fn print(&mut self, sw_ignore_focus: bool) {
-
         print!("{}\n\n", self.cursor.header());
 
         for cursor in self.cursor.options().iter_mut().enumerate() {
@@ -128,9 +125,16 @@ impl <T: IManager> TerminalManager<T> {
     }
 
     async fn manage(&mut self) -> Option<TerminalCursor<T>> {
-        let o_option = self.cursor.option();
+        let o_option = self.cursor.option().cloned();
         if o_option.is_some() {
-            let option = o_option.unwrap();
+            let mut option = o_option.unwrap();
+            if option.input_required() {
+                let input = self.keyboard_input();
+                option.push_arg(input);
+            }
+
+            println!("\n Please stand by...");
+
             return Some(option.execute().await);
         }
         None

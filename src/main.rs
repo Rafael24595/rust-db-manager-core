@@ -33,8 +33,7 @@ mod domain {
         pub mod filter_element;
     }
     pub mod generate {
-        pub mod generate_collection_query;
-        pub mod generate_data_base_query;
+        pub mod generate_resource_query;
     }
     pub mod connection_data;
     pub mod data_base_info;

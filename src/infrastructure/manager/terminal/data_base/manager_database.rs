@@ -3,7 +3,7 @@ use std::vec;
 use async_trait::async_trait;
 
 use crate::{
-    domain::filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, 
+    domain::{filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::generate_resource_query::GenerateResourceQuery}, 
     infrastructure::{manager::terminal::{
         i_manager::IManager, terminal_cursor::TerminalCursor, terminal_manager::{self, TerminalManager}, terminal_option::TerminalOption}, 
         repository::i_db_repository::IDBRepository
@@ -15,6 +15,8 @@ pub const STATUS: &'static str = "STATUS";
 
 const TEXT_INPUT: &'static str = "TEXT_INPUT";
 
+pub const CREATE_DATABASE: &'static str = "CREATE_DATABASE";
+pub const DROP_DATABASE: &'static str = "DROP_DATABASE";
 pub const SHOW_DATABASES: &'static str = "SHOW_DATABASES";
 pub const SELECT_DATABASE_PANEL: &'static str = "SELECT_DATABASE_PANEL";
 pub const SELECT_DATABASE: &'static str = "SELECT_DATABASE";
@@ -51,6 +53,8 @@ impl <T: IDBRepository> IManager for ManagerDatabase<T> {
 
             TEXT_INPUT => self.clone().translate_query(option).await,
 
+            CREATE_DATABASE => self.clone().create_data_base(option).await,
+            DROP_DATABASE => self.clone().drop_data_base().await,
             SHOW_DATABASES => self.clone().show_databases().await,
             SELECT_DATABASE_PANEL => self.clone().select_database_panel().await,
             SELECT_DATABASE => self.clone().select_database(option),
@@ -96,6 +100,43 @@ impl <T: IDBRepository> ManagerDatabase<T> {
         }
 
         self.home(&format!("{}\n\n{}", headers, message))
+    }
+
+    async fn create_data_base(&self, option: TerminalOption<Self>) -> TerminalCursor<Self> {
+        let args = option.args();
+        let mut header = self.info_headers("Cannot create data base.");
+        if args.len() > 0 {
+            let data_base = args.get(0).unwrap().trim().to_string();
+            let query = GenerateResourceQuery::from_data_base(data_base);
+            let result = self.service.create_data_base(query).await;
+            if result.is_err() {
+                let header = self.info_headers(&result.unwrap_err().message());
+                return self.home(&header);
+            }
+
+            header = self.info_headers(&format!("Data base '{}' created", result.unwrap()));
+        }
+
+        self.home(&header)
+    }
+
+    async fn drop_data_base(&mut self) -> TerminalCursor<Self> {
+        let mut header = self.info_headers("Cannot drop data base.");
+        if self.data_base.is_some() {
+            let data_base = self.data_base.clone().unwrap();
+            let query = GenerateResourceQuery::from_data_base(data_base);
+            let result = self.service.drop_data_base(query).await;
+            if result.is_err() {
+                let header = self.info_headers(&result.unwrap_err().message());
+                return self.home(&header);
+            }
+
+            self.reset_database();
+
+            header = self.info_headers(&format!("Data base '{}' dropped", result.unwrap()));
+        }
+
+        self.home(&header)
     }
 
     async fn show_databases(&self) -> TerminalCursor<Self> {

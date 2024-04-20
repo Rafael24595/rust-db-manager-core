@@ -8,11 +8,12 @@ use serde_json::{
     from_str, 
     Value
 };
+use uuid::Uuid;
 
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
-        connection_data::ConnectionData, data_base_info::DataBaseInfo, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_data_base_query::GenerateDataBaseQuery}
+        connection_data::ConnectionData, data_base_info::DataBaseInfo, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::generate_resource_query::GenerateResourceQuery
     }
 };
 
@@ -45,18 +46,29 @@ impl MongoDbRepository {
         Ok(client)
     }
 
-    fn data_base(&self, query: &DataBaseQuery) -> Database {
-        let data_base = query.data_base();
+        
+    fn collection_from_query(&self, query: &DataBaseQuery) -> Collection<Document> {
+        let data_base = query.data_base();        
+        let collection = query.collection();
+        return self.data_base(data_base).collection(&collection);
+    }
+
+    fn collection_from_resource(&self, query: &GenerateResourceQuery) -> Collection<Document> {
+        let data_base = query.data_base();        
+        let collection = query.collection();
+        return self.data_base(data_base).collection(&collection);
+    }
+
+    fn data_base(&self, data_base: String) -> Database {
         return self.client.database(&data_base);
     }
 
-    fn collection(&self, query: &DataBaseQuery) -> Collection<Document> {
-        let collection = query.collection();
-        return self.data_base(query).collection(&collection);
+    fn collection(&self, data_base: String, collection: String) -> Collection<Document> {
+        return self.data_base(data_base).collection(&collection);
     }
 
     async fn find_cursor(&self, query: DataBaseQuery) -> Result<Cursor<Document>, ConnectException>  {
-        let collection = self.collection(&query);
+        let collection = self.collection_from_query(&query);
 
         let mut filter = FilterElement::new();
 
@@ -97,11 +109,33 @@ impl IDBRepository for MongoDbRepository {
 
     async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
         let databases = self.list_data_bases().await?;
+
         Ok(databases.iter().any(|name| name == &query.data_base()))
     }
 
-    async fn create_data_base(&self, query: GenerateDataBaseQuery) -> String {
-        todo!()
+    async fn create_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        let data_base = query.data_base();
+        let temp_col = format!("TEMP_{}", Uuid::new_v4().to_string());
+        if self.collection_exists(DataBaseQuery::from(data_base.clone(), temp_col.clone())).await? {
+            return self.create_data_base(query).await;
+        }
+
+        let query = GenerateResourceQuery::new(data_base.clone(), temp_col);
+        let _ = self.create_collection(query).await?;
+
+        Ok(data_base)
+    }
+
+    async fn drop_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        let data_base = query.data_base();
+        let database = self.data_base(data_base.clone());
+        let result = database.drop(None).await;
+        if result.is_err() {
+            let exception = ConnectException::new(result.err().unwrap().to_string());
+            return Err(exception);
+        }
+
+        Ok(data_base)
     }
 
     async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException> {
@@ -110,25 +144,47 @@ impl IDBRepository for MongoDbRepository {
             let exception = ConnectException::new(result.err().unwrap().to_string());
             return Err(exception);
         }
-        return Ok(result.ok().unwrap());
+        
+        Ok(result.ok().unwrap())
     }
 
     async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
         let collections = self.list_collections(query.clone()).await?;
+        
         Ok(collections.iter().any(|name| name == &query.collection()))
     }
 
-    async fn create_collection(&self, query: GenerateCollectionQuery) -> String {
-        todo!()
+    async fn create_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        let collection = query.collection();
+        let db = self.data_base(query.data_base());
+        let result = db.create_collection(query.collection(), None).await;
+        if result.is_err() {
+            let exception = ConnectException::new(result.err().unwrap().to_string());
+            return Err(exception);
+        }
+
+        Ok(collection)
+    }
+
+    async fn drop_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException> {
+        let collection = self.collection_from_resource(&query);
+        let result = collection.drop(None).await;
+        if result.is_err() {
+            let exception = ConnectException::new(result.err().unwrap().to_string());
+            return Err(exception);
+        }
+
+        Ok(query.collection())
     }
 
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        let result = self.data_base(&query).list_collection_names(None).await;
+        let result = self.data_base(query.data_base()).list_collection_names(None).await;
         if result.is_err() {
             let exception = ConnectException::new(result.unwrap_err().to_string());
             return Err(exception);
         }
-        return Ok(result.ok().unwrap());
+
+        Ok(result.ok().unwrap())
     }
 
     async fn find(&self, query: DataBaseQuery) -> Result<Option<String>, ConnectException> {
@@ -136,6 +192,7 @@ impl IDBRepository for MongoDbRepository {
         if o_result.is_err() {
             return Err(o_result.unwrap_err());
         }
+        
         Ok(o_result.unwrap().first().cloned())
     }
 
@@ -192,7 +249,7 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn insert(&self, query: DataBaseQuery, value: String) -> Result<String, ConnectException> {
-        let collection = self.collection(&query);
+        let collection = self.collection_from_query(&query);
 
         let json: Result<Value, _> = from_str(&value);
 
@@ -230,7 +287,7 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn delete(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        let collection = self.collection(&query);
+        let collection = self.collection_from_query(&query);
 
         let mut elements_deleted = Vec::<String>::new();
 
@@ -254,7 +311,8 @@ impl IDBRepository for MongoDbRepository {
                 elements_deleted.push(format!("_id={}", id.unwrap().to_string()));
             }
         }
-     Ok(elements_deleted)
+     
+        Ok(elements_deleted)
     }
     
 }

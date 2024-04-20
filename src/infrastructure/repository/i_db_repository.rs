@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_info::DataBaseInfo, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_data_base_query::GenerateDataBaseQuery}}};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_info::DataBaseInfo, filter::data_base_query::DataBaseQuery, generate::generate_resource_query::GenerateResourceQuery}};
 
 #[async_trait]
 pub trait IDBRepository: Clone + Send + Sync {
@@ -8,10 +8,12 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn status(&self) -> Result<(), ConnectException>;
     async fn info(&self) -> DataBaseInfo;
     async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException>;
-    async fn create_data_base(&self, query: GenerateDataBaseQuery) -> String;
+    async fn create_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException>;
+    async fn drop_data_base(&self, query: GenerateResourceQuery) -> Result<String, ConnectException>;
     async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException>;
     async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException>;
-    async fn create_collection(&self, query: GenerateCollectionQuery) -> String;
+    async fn create_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException>;
+    async fn drop_collection(&self, query: GenerateResourceQuery) -> Result<String, ConnectException>;
     async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn find(&self, query: DataBaseQuery) -> Result<Option<String>, ConnectException>;
     async fn find_query_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException>;
