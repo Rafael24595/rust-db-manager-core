@@ -17,9 +17,7 @@ use crate::{
     }
 };
 
-use super::i_db_repository::IDBRepository;
-
-pub const DB_NAME: &str = "MongoDB";
+use super::{e_db_repository::EDBRepository, i_db_repository::IDBRepository};
 
 #[derive(Clone)]
 pub struct MongoDbRepository {
@@ -115,7 +113,7 @@ impl IDBRepository for MongoDbRepository {
             version = o_version.unwrap().to_string();
         }
 
-        DataBaseInfo::new_no_relational(String::from(DB_NAME), version, false, false)
+        DataBaseInfo::new_no_relational(String::from(EDBRepository::MongoDB.to_string()), version, false, false)
     }
 
     async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
