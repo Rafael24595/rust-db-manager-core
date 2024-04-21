@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 use lazy_static::lazy_static;
 use uuid::Uuid;
 
-use crate::infrastructure::db_service::DBService;
+use crate::{commons::exception::connect_exception::ConnectException, infrastructure::db_service::DBService};
 
 lazy_static! {
     static ref INSTANCE: Mutex<Option<Configuration>> = Mutex::new(None);
@@ -59,7 +59,25 @@ impl Configuration {
         Configuration::instance().timestamp
     }
 
-    pub fn push_service(key: String, service: DBService) -> Configuration {
+    pub fn push_service(service: DBService) -> Result<Configuration, ConnectException> {
+        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
+        
+        let config = match instance.as_mut() {
+            Some(config) => config,
+            None => panic!("Configuration is not initialized."),
+        };
+
+        if config.services.contains_key(&service.name()) {
+            let exception = ConnectException::new(String::from("Service already exists."));
+            return Err(exception);
+        }
+        
+        config.services.insert(service.name(), service);
+        
+        return Ok(config.clone());
+    }
+
+    pub fn put_service(service: DBService) -> Configuration {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
@@ -67,9 +85,20 @@ impl Configuration {
             None => panic!("Configuration is not initialized."),
         };
         
-        config.services.insert(key, service);
+        config.services.insert(service.name(), service);
         
         return config.clone();
+    }
+
+    pub fn find_services() -> Vec<String> {
+        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
+        
+        let config = match instance.as_mut() {
+            Some(config) => config,
+            None => panic!("Configuration is not initialized."),
+        };
+        
+        config.services.iter().map(|s| s.1.name()).collect()
     }
 
     pub fn find_service(key: String) -> Option<DBService> {
