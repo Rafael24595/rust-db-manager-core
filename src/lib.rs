@@ -14,6 +14,7 @@ pub mod infrastructure {
         pub mod i_db_repository;
         pub mod mongo_db_repository;
     }
+    pub mod db_service_lite;
     pub mod db_service;
 }
 pub mod domain {

@@ -2,6 +2,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{commons::exception::connect_exception::ConnectException, domain::connection_data::ConnectionData, infrastructure::repository::{db_dictionary, i_db_repository::IDBRepository}, service::service::Service};
 
+use super::repository::e_db_repository::EDBRepository;
+
 #[derive(Clone)]
 pub struct DBService {
     name: String,
@@ -25,6 +27,10 @@ impl DBService {
     
     pub fn name(&self) -> String {
         self.name.clone()
+    }
+
+    pub fn category(&self) -> EDBRepository {
+        self.connection_data.category()
     }
 
     pub async fn instance(&self) -> Result<Service<impl IDBRepository>, ConnectException> {

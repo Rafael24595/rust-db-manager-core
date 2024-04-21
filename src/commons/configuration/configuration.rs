@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 use lazy_static::lazy_static;
 use uuid::Uuid;
 
-use crate::{commons::exception::connect_exception::ConnectException, infrastructure::db_service::DBService};
+use crate::{commons::exception::connect_exception::ConnectException, infrastructure::{db_service::DBService, db_service_lite::DBServiceLite}};
 
 lazy_static! {
     static ref INSTANCE: Mutex<Option<Configuration>> = Mutex::new(None);
@@ -90,7 +90,7 @@ impl Configuration {
         return config.clone();
     }
 
-    pub fn find_services() -> Vec<String> {
+    pub fn find_services() -> Vec<DBServiceLite> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
@@ -98,7 +98,7 @@ impl Configuration {
             None => panic!("Configuration is not initialized."),
         };
         
-        config.services.iter().map(|s| s.1.name()).collect()
+        config.services.iter().map(|s| DBServiceLite::new(s.1.name(), s.1.category())).collect()
     }
 
     pub fn find_service(key: String) -> Option<DBService> {
