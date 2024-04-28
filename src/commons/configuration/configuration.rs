@@ -1,5 +1,6 @@
-use std::{collections::HashMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
+use std::{collections::HashMap, process::Command, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 
+use cargo_metadata::{CargoOpt, MetadataCommand};
 use lazy_static::lazy_static;
 use uuid::Uuid;
 
@@ -11,6 +12,10 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct Configuration {
+    rustc_version: String,
+    cargo_version: String,
+    app_name: String,
+    app_version: String,
     session_id: String,
     timestamp: u128,
     services: HashMap<String, DBService>
@@ -25,6 +30,20 @@ impl Configuration {
             panic!("Configuration is already initialized.");
         }
 
+        let rustc_version = Configuration::command_rustc_version();
+        let cargo_version = Configuration::command_cargo_version();
+
+        let metadata = MetadataCommand::new()
+            .features(CargoOpt::AllFeatures)
+            .exec()
+            .unwrap();
+
+        let root: &cargo_metadata::Package = metadata.packages.iter()
+            .find(|i| i.name == "rust_db_manager_core").unwrap();
+
+        let app_name = root.name.clone();
+        let app_version = root.version.clone().to_string();
+
         let session_id = Uuid::new_v4().to_string();
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -33,7 +52,7 @@ impl Configuration {
         let services = HashMap::new();
 
         let config = Configuration {
-            session_id, timestamp, services
+            rustc_version, cargo_version, app_name, app_version, session_id, timestamp, services
         };
 
         *instance = Some(config);
@@ -41,7 +60,28 @@ impl Configuration {
         return instance.as_ref().unwrap().clone();
     }
 
-    pub fn instance() -> Configuration {
+    fn command_cargo_version() -> String {
+        Configuration::command_lang_version("cargo")
+    }
+
+    fn command_rustc_version() -> String {
+        Configuration::command_lang_version("rustc")
+    }
+
+    fn command_lang_version(resource: &str) -> String {
+        let output = Command::new(resource)
+            .arg("--version")
+            .output()
+            .expect("Failed to execute command");
+        if output.status.success() {
+            return String::from_utf8_lossy(&output.stdout).to_string();
+        } else {
+            //TODO: Log.
+            panic!("Failed to get {} version", resource);
+        }
+    }
+
+    fn instance() -> Configuration {
         let instance = INSTANCE.lock().expect("Could not lock mutex");
         if instance.is_none() {
             //TODO: Log.
@@ -49,6 +89,22 @@ impl Configuration {
         }
         
         return instance.as_ref().unwrap().clone();
+    }
+
+    pub fn rustc_version() -> String {
+        Configuration::instance().rustc_version
+    }
+
+    pub fn cargo_version() -> String {
+        Configuration::instance().cargo_version
+    }
+
+    pub fn name() -> String {
+        Configuration::instance().app_name
+    }
+
+    pub fn version() -> String {
+        Configuration::instance().app_version
     }
 
     pub fn session_id() -> String {
