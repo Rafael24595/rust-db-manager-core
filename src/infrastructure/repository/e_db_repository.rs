@@ -1,9 +1,15 @@
-#[derive(Clone)]
+use strum::{EnumIter, IntoEnumIterator};
+
+#[derive(Clone, EnumIter)]
 pub enum EDBRepository {
     MongoDB
 }
 
 impl EDBRepository {
+
+    pub fn items() -> Vec<EDBRepository> {
+        EDBRepository::iter().collect()
+    }
 
     pub fn to_string(&self) -> String {
         match self {

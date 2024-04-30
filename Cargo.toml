@@ -16,3 +16,4 @@ crossterm = "0.27.0"
 uuid = "1.8.0"
 cargo_metadata = "0.18.1"
 argon2 = "0.5.3"
+strum =  {version = "0.26.2", features = ["derive"]}
