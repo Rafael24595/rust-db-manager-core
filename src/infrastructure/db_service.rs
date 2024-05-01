@@ -12,10 +12,11 @@ use crate::{commons::exception::connect_exception::ConnectException, domain::con
 
 use super::repository::e_db_repository::EDBRepository;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DBService {
     name: String,
     owner: String,
+    protected: bool,
     salt: String,
     timestamp: u128,
     connection_data: ConnectionData
@@ -23,15 +24,19 @@ pub struct DBService {
 
 impl DBService {
 
-    pub fn new(name: String, owner: String, password: String, connection_data: ConnectionData) -> Result<DBService, ConnectException> {
-        let salt = DBService::generate_salt(password)?;
+    pub fn new(name: String, owner: String, protected: bool, password: String, connection_data: ConnectionData) -> Result<DBService, ConnectException> {
+        let mut salt = String::new();
+        if protected {
+            salt = DBService::generate_salt(password)?;
+        }
+
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Cannot read actual date.")
             .as_millis();
         
         Ok(DBService {
-            name, salt, owner, timestamp, connection_data
+            name, owner, protected, salt, timestamp, connection_data
         })
     }
 
@@ -50,6 +55,10 @@ impl DBService {
     }
 
     pub fn is_authorized(&self, password: String) -> Result<(), ConnectException> {
+        if !self.protected {
+            return Ok(());
+        }
+
         let parsed_hash = PasswordHash::new(&self.salt);
         if parsed_hash.is_err() {
             let exception = ConnectException::new(parsed_hash.unwrap_err().to_string());
@@ -73,8 +82,16 @@ impl DBService {
         self.connection_data.category()
     }
 
+    pub fn is_protected(&self) -> bool {
+        self.protected
+    }
+
     pub fn salt(&self) -> String {
         self.salt.clone()
+    }
+
+    pub fn is_same(&self, other: DBService) -> bool {
+        self.name == other.name
     }
 
     pub async fn instance(&self) -> Result<Service<impl IDBRepository>, ConnectException> {

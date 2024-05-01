@@ -1,6 +1,6 @@
 use crate::infrastructure::repository::e_db_repository::EDBRepository;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ConnectionData {
     category: EDBRepository,
     connection: String

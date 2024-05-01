@@ -115,37 +115,6 @@ impl Configuration {
         Configuration::instance().timestamp
     }
 
-    pub fn push_service(service: DBService) -> Result<Configuration, ConnectException> {
-        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
-        
-        let config = match instance.as_mut() {
-            Some(config) => config,
-            None => panic!("Configuration is not initialized."),
-        };
-
-        if config.services.contains_key(&service.name()) {
-            let exception = ConnectException::new(String::from("Service already exists."));
-            return Err(exception);
-        }
-        
-        config.services.insert(service.name(), service);
-        
-        return Ok(config.clone());
-    }
-
-    pub fn put_service(service: DBService) -> Configuration {
-        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
-        
-        let config = match instance.as_mut() {
-            Some(config) => config,
-            None => panic!("Configuration is not initialized."),
-        };
-        
-        config.services.insert(service.name(), service);
-        
-        return config.clone();
-    }
-
     pub fn find_services() -> Vec<DBServiceLite> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
@@ -166,6 +135,48 @@ impl Configuration {
         };
         
         config.services.get(&key).cloned()
+    }
+
+    pub fn push_service(service: DBService) -> Result<DBService, ConnectException> {
+        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
+        
+        let config = match instance.as_mut() {
+            Some(config) => config,
+            None => panic!("Configuration is not initialized."),
+        };
+
+        if config.services.contains_key(&service.name()) {
+            let exception = ConnectException::new(String::from("Service already exists."));
+            return Err(exception);
+        }
+        
+        config.services.insert(service.name(), service.clone());
+        
+        return Ok(service);
+    }
+
+    pub fn put_service(service: DBService) -> DBService {
+        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
+        
+        let config = match instance.as_mut() {
+            Some(config) => config,
+            None => panic!("Configuration is not initialized."),
+        };
+        
+        config.services.insert(service.name(), service.clone());
+        
+        return service;
+    }
+
+    pub fn remove_service(service: DBService) -> Option<DBService> {
+        let mut instance = INSTANCE.lock().expect("Could not lock mutex");
+        
+        let config = match instance.as_mut() {
+            Some(config) => config,
+            None => panic!("Configuration is not initialized."),
+        };
+        
+        return config.services.remove(&service.name());
     }
 
 }

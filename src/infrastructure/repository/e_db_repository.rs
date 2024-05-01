@@ -1,6 +1,6 @@
 use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Clone, EnumIter)]
+#[derive(Debug, Clone, EnumIter)]
 pub enum EDBRepository {
     MongoDB
 }
