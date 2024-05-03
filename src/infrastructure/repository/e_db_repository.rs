@@ -17,8 +17,8 @@ impl EDBRepository {
         }
     }
 
-    pub fn from_string(category: String) -> Option<EDBRepository> {
-        match category.as_str() {
+    pub fn from_string(category: &str) -> Option<EDBRepository> {
+        match category {
             "MongoDB" => Some(EDBRepository::MongoDB),
             _ => None,
         }

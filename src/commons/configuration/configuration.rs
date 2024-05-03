@@ -137,7 +137,7 @@ impl Configuration {
         config.services.get(&key).cloned()
     }
 
-    pub fn push_service(service: DBService) -> Result<DBService, ConnectException> {
+    pub fn push_service(service: &DBService) -> Result<&DBService, ConnectException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
