@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+
 use mongodb::{
     bson::{doc, to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
 };
@@ -13,11 +14,11 @@ use uuid::Uuid;
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
-        connection_data::ConnectionData, data_base_info::DataBaseInfo, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
+        connection_data::ConnectionData, data_base_group_data::DataBaseDataGroup, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
     }
 };
 
-use super::{e_db_repository::EDBRepository, i_db_repository::IDBRepository};
+use super::{extractor_metadata_mongo_db::ExtractorMetadataMongoDb, i_db_repository::IDBRepository};
 
 #[derive(Clone)]
 pub struct MongoDbRepository {
@@ -96,6 +97,7 @@ impl MongoDbRepository {
 
 }
 
+
 #[async_trait]
 impl IDBRepository for MongoDbRepository {
 
@@ -104,16 +106,11 @@ impl IDBRepository for MongoDbRepository {
         return Ok(());
     }
 
-    async fn info(&self) -> DataBaseInfo {
-        let server_info = self.client.database("admin")
+    async fn metadata(&self) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        let server_info = &self.client.database("admin")
             .run_command(doc! {"serverStatus": 1}, None).await.unwrap();
-        let o_version = server_info.get("version");
-        let mut version = String::from("0.0");
-        if o_version.is_none() {
-            version = o_version.unwrap().to_string();
-        }
 
-        DataBaseInfo::new_no_relational(String::from(EDBRepository::MongoDB.to_string()), version, false, false)
+        ExtractorMetadataMongoDb::make(server_info)
     }
 
     async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {

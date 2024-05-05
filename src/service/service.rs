@@ -1,4 +1,4 @@
-use crate::{commons::exception::connect_exception::ConnectException, domain::{filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}, infrastructure::repository::i_db_repository::IDBRepository};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_group_data::DataBaseDataGroup, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}, infrastructure::repository::i_db_repository::IDBRepository};
 
 #[derive(Clone)]
 pub struct Service<T: IDBRepository> {
@@ -13,6 +13,10 @@ impl <T: IDBRepository> Service<T> {
 
     pub async fn status(&self) -> Result<(), ConnectException> {
         return self.repository.status().await;
+    }
+
+    pub async fn metadata(&self) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        return self.repository.metadata().await;
     }
 
     pub async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {

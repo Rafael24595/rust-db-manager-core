@@ -11,6 +11,7 @@ pub mod infrastructure {
     pub mod repository {
         pub mod db_dictionary;
         pub mod e_db_repository;
+        pub mod extractor_metadata_mongo_db;
         pub mod i_db_repository;
         pub mod mongo_db_repository;
     }
@@ -31,7 +32,8 @@ pub mod domain {
         pub mod generate_collection_query;
     }
     pub mod connection_data;
-    pub mod data_base_info;
+    pub mod data_base_field;
+    pub mod data_base_group_data;
 }
 pub mod service {
     pub mod service;
