@@ -10,7 +10,7 @@ pub(crate) struct ExtractorMetadataMongoDb {
 
 impl ExtractorMetadataMongoDb {
     
-    pub(crate) fn make(server_info: &Document) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    pub(crate) fn from_db(server_info: &Document) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
         let mut metadata: Vec<DataBaseDataGroup> = Vec::new();
         metadata.push(Self::metadata_general(server_info)?);
         metadata.push(Self::metadata_connection(server_info)?);
@@ -25,7 +25,7 @@ impl ExtractorMetadataMongoDb {
 
         let n_timestamp = server_info.get("uptimeMillis")
             .unwrap_or(&Bson::String(String::from("0")))
-            .as_i64()
+            .to_string().parse::<i64>()
             .unwrap_or_default()
             .try_into()
             .unwrap_or_default();
@@ -202,5 +202,52 @@ impl ExtractorMetadataMongoDb {
         Ok(group)
     }
 
+    pub(crate) fn from_collection(collection_info: Document) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        Self::from_collections(vec![collection_info])
+    }
+
+    pub(crate) fn from_collections(collections_info: Vec<Document>) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        let mut group = DataBaseDataGroup::new(0, String::from("collection"));
+
+        let collections = collections_info.len();
+        
+        let mut count = 0;
+        let mut size = 0;
+        let mut storage_size = 0;
+        let mut avg_obj_size = 0;
+        let mut nindexes = 0;
+        let mut total_index_size = 0;
+        let mut total_size = 0;
+        let mut index_sizes = 0;
+
+        for collection_info in collections_info {
+            for x in collection_info.iter() {
+                println!("{} = {:?}", x.0, collection_info.get(x.0).unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>())
+            }
+            count = count + collection_info.get("count").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            size =  size + collection_info.get("size").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            storage_size  = storage_size + collection_info.get("storageSize").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            avg_obj_size = avg_obj_size + collection_info.get("avgObjSize").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            nindexes = nindexes + collection_info.get("nindexes").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            total_index_size = total_index_size + collection_info.get("totalIndexSize").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            total_size = total_size + collection_info.get("totalSize").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+            index_sizes = index_sizes + collection_info.get("indexSizes").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
+        }
+
+        group.push(String::from("Collections"), collections.to_string());
+        group.push(String::from("Documents"), count.to_string());
+        group.push(String::from("Data size"), size.to_string());
+        group.push(String::from("Storage size"), storage_size.to_string());
+        group.push(String::from("Average object size"), avg_obj_size.to_string());
+        group.push(String::from("Indexes Count"), nindexes.to_string());
+        group.push(String::from("Index size"),total_index_size.to_string());
+        group.push(String::from("Total Size"), total_size.to_string());
+        group.push(String::from("Indexes"), index_sizes.to_string());
+
+        let mut metadata: Vec<DataBaseDataGroup> = Vec::new();
+        metadata.push(group);
+
+        Ok(metadata)
+    }
 
 }

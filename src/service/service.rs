@@ -15,19 +15,19 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.status().await;
     }
 
-    pub async fn metadata(&self) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
-        return self.repository.metadata().await;
+    pub async fn data_base_metadata(&self) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        return self.repository.data_base_metadata().await;
     }
 
-    pub async fn data_base_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
+    pub async fn data_base_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException> {
         return self.repository.data_base_exists(query).await;
     }
 
-    pub async fn create_data_base(&self, query: GenerateDatabaseQuery) -> Result<String, ConnectException> {
+    pub async fn create_data_base(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
         return self.repository.create_data_base(query).await;
     }
 
-    pub async fn drop_data_base(&self, query: GenerateDatabaseQuery) -> Result<String, ConnectException> {
+    pub async fn drop_data_base(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
         return self.repository.drop_data_base(query).await;
     }
 
@@ -35,47 +35,55 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.list_data_bases().await;
     }
 
-    pub async fn collection_exists(&self, query: DataBaseQuery) -> Result<bool, ConnectException> {
+    pub async fn data_base_collections_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        return self.repository.data_base_collections_metadata(query).await;
+    }
+
+    pub async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+        return self.repository.collection_metadata(query).await;
+    }
+
+    pub async fn collection_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException> {
         return self.repository.collection_exists(query).await;
     }
 
-    pub async fn create_collection(&self, query: GenerateCollectionQuery) -> Result<String, ConnectException> {
+    pub async fn create_collection(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         return self.repository.create_collection(query).await;
     }
 
-    pub async fn drop_collection(&self, query: GenerateCollectionQuery) -> Result<String, ConnectException> {
+    pub async fn drop_collection(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         return self.repository.drop_collection(query).await;
     }
 
-    pub async fn list_collections(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn list_collections(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.list_collections(query).await;
     }
 
-    pub async fn find(&self, query: DataBaseQuery) -> Result<Option<String>, ConnectException> {
+    pub async fn find(&self, query: &DataBaseQuery) -> Result<Option<String>, ConnectException> {
         return self.repository.find(query).await;
     }
 
-    pub async fn find_query_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn find_query_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.find_query_lite(query).await;
     }
 
-    pub async fn find_query(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.find_query(query).await;
     }
 
-    pub async fn find_all_lite(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn find_all_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.find_all_lite(query).await;
     }
 
-    pub async fn find_all(&self, query: DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.find_all(query).await;
     }
 
-    pub async fn insert(&self, query: DataBaseQuery, value:String) -> Result<String,ConnectException>{
+    pub async fn insert(&self, query: &DataBaseQuery, value:String) -> Result<String,ConnectException>{
         return self.repository.insert(query, value).await;
     }
 
-    pub async fn delete(&self, query: DataBaseQuery) -> Result<Vec<String>,ConnectException>{
+    pub async fn delete(&self, query: &DataBaseQuery) -> Result<Vec<String>,ConnectException>{
         return self.repository.delete(query).await;
     }
 
