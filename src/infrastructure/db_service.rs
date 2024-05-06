@@ -78,6 +78,10 @@ impl DBService {
         self.name.clone()
     }
 
+    pub fn owner(&self) -> String {
+        self.owner.clone()
+    }
+
     pub fn category(&self) -> EDBRepository {
         self.connection_data.category()
     }
@@ -88,6 +92,14 @@ impl DBService {
 
     pub fn salt(&self) -> String {
         self.salt.clone()
+    }
+
+    pub fn timestamp(&self) -> u128 {
+        self.timestamp
+    }
+
+    pub fn connection_data(&self) -> ConnectionData {
+        self.connection_data.clone()
     }
 
     pub fn is_same(&self, other: DBService) -> bool {

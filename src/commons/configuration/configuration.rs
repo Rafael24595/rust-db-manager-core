@@ -126,7 +126,7 @@ impl Configuration {
         config.services.iter().map(|s| DBServiceLite::new(s.1.name(), s.1.category())).collect()
     }
 
-    pub fn find_service(key: String) -> Option<DBService> {
+    pub fn find_service(key: &str) -> Option<DBService> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
@@ -134,7 +134,7 @@ impl Configuration {
             None => panic!("Configuration is not initialized."),
         };
         
-        config.services.get(&key).cloned()
+        config.services.get(key).cloned()
     }
 
     pub fn push_service(service: &DBService) -> Result<&DBService, ConnectException> {
