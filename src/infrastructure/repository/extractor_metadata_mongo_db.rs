@@ -236,11 +236,11 @@ impl ExtractorMetadataMongoDb {
 
         group.push(String::from("Collections"), collections.to_string());
         group.push(String::from("Documents"), count.to_string());
-        group.push(String::from("Data size"), size.to_string());
-        group.push(String::from("Storage size"), storage_size.to_string());
-        group.push(String::from("Average object size"), avg_obj_size.to_string());
+        group.push(String::from("Data size"), format!("{:?} Bytes", size));
+        group.push(String::from("Storage size"), format!("{:?} Bytes", storage_size));
+        group.push(String::from("Average Object size"), format!("{:?} Bytes", avg_obj_size));
         group.push(String::from("Indexes Count"), nindexes.to_string());
-        group.push(String::from("Index size"),total_index_size.to_string());
+        group.push(String::from("Index size"),format!("{:?} Bytes", total_index_size));
         group.push(String::from("Total Size"), total_size.to_string());
         group.push(String::from("Indexes"), index_sizes.to_string());
 
