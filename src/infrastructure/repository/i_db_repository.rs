@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_group_data::DataBaseDataGroup, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_group_data::DataBaseDataGroup, definition::field::field_definition::FieldDefinition, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}};
 
 #[async_trait]
 pub trait IDBRepository: Clone + Send + Sync {
@@ -12,6 +12,7 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn drop_data_base(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
     async fn list_data_bases(&self) -> Result<Vec<String>, ConnectException>;
     async fn data_base_collections_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException>;
+    async fn collection_accept_definition(&self) -> Result<Vec<FieldDefinition>, ConnectException>;
     async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException>;
     async fn collection_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException>;
     async fn create_collection(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;

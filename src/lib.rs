@@ -19,6 +19,15 @@ pub mod infrastructure {
     pub mod db_service;
 }
 pub mod domain {
+    pub mod definition {
+        pub mod field {
+            pub mod e_field_category;
+            pub mod e_field_code;
+            pub mod field_attribute_default_definition;
+            pub mod field_attribute_definition;
+            pub mod field_definition;
+        }
+    }
     pub mod filter {
         pub mod data_base_query;
         pub mod e_filter_category;

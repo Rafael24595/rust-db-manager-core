@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::{
     commons::exception::connect_exception::ConnectException, 
     domain::{
-        connection_data::ConnectionData, data_base_group_data::DataBaseDataGroup, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
+        connection_data::ConnectionData, data_base_group_data::DataBaseDataGroup, definition::field::{e_field_category::EFieldCategory, e_field_code::EFieldCode, field_attribute_default_definition::FieldAttributeDefaultDefinition, field_attribute_definition::FieldAttributeDefinition, field_definition::FieldDefinition}, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
     }
 };
 
@@ -170,6 +170,27 @@ impl IDBRepository for MongoDbRepository {
         }
 
         ExtractorMetadataMongoDb::from_collections(documents)
+    }
+
+    async fn collection_accept_definition(&self) -> Result<Vec<FieldDefinition>, ConnectException> {
+        let mut definition = Vec::new();
+
+        let index_attributes = Vec::from(vec![
+            FieldAttributeDefinition::new(
+                String::from("Direction"),
+                String::from("Direction"),
+                Vec::from(vec![
+                    FieldAttributeDefaultDefinition::new(String::from("ASC"), String::from("1")),
+                    FieldAttributeDefaultDefinition::new(String::from("DSC"), String::from("-1")),
+                ])
+            )
+        ]);
+
+        definition.push(
+            FieldDefinition::new(0, String::from("Index"), EFieldCode::ID, EFieldCategory::STRING, false, true, index_attributes)
+        );
+
+        Ok(definition)
     }
 
     async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {

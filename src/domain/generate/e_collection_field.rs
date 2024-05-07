@@ -1,4 +1,5 @@
 pub enum ECollectionField {
     NUMBER,
-    STRING
+    STRING,
+    BOOLEAN
 }
