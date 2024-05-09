@@ -1019,6 +1019,7 @@ dependencies = [
  "futures-util",
  "lazy_static",
  "mongodb",
+ "serde",
  "serde_json",
  "strum",
  "tokio",

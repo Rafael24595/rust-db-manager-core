@@ -12,13 +12,13 @@ use serde_json::{
 use uuid::Uuid;
 
 use crate::{
-    commons::exception::connect_exception::ConnectException, 
+    commons::{configuration::definition::mongo_db::mongo_db, exception::connect_exception::ConnectException}, 
     domain::{
-        connection_data::ConnectionData, data_base_group_data::DataBaseDataGroup, definition::field::{e_field_category::EFieldCategory, e_field_code::EFieldCode, field_attribute_default_definition::FieldAttributeDefaultDefinition, field_attribute_definition::FieldAttributeDefinition, field_definition::FieldDefinition}, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
-    }
+        connection_data::ConnectionData, data_base_group_data::DataBaseDataGroup, definition::collection_definition::CollectionDefinition, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{field::field_data::FieldData, generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
+    }, infrastructure::repository::i_db_repository::IDBRepository
 };
 
-use super::{extractor_metadata_mongo_db::ExtractorMetadataMongoDb, i_db_repository::IDBRepository};
+use super::extractor_metadata_mongo_db::ExtractorMetadataMongoDb;
 
 #[derive(Clone)]
 pub struct MongoDbRepository {
@@ -132,7 +132,7 @@ impl IDBRepository for MongoDbRepository {
             return self.create_data_base(query).await;
         }
 
-        let query = GenerateCollectionQuery::new(data_base.clone(), temp_col);
+        let query = GenerateCollectionQuery::from_collection(data_base.clone(), temp_col);
         let _ = self.create_collection(&query).await?;
 
         Ok(data_base)
@@ -172,23 +172,10 @@ impl IDBRepository for MongoDbRepository {
         ExtractorMetadataMongoDb::from_collections(documents)
     }
 
-    async fn collection_accept_definition(&self) -> Result<Vec<FieldDefinition>, ConnectException> {
-        let mut definition = Vec::new();
+    async fn collection_accept_definition(&self) -> Result<CollectionDefinition, ConnectException> {        
+        let json = mongo_db();
 
-        let index_attributes = Vec::from(vec![
-            FieldAttributeDefinition::new(
-                String::from("Direction"),
-                String::from("Direction"),
-                Vec::from(vec![
-                    FieldAttributeDefaultDefinition::new(String::from("ASC"), String::from("1")),
-                    FieldAttributeDefaultDefinition::new(String::from("DSC"), String::from("-1")),
-                ])
-            )
-        ]);
-
-        definition.push(
-            FieldDefinition::new(0, String::from("Index"), EFieldCode::ID, EFieldCategory::STRING, false, true, index_attributes)
-        );
+        let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
 
         Ok(definition)
     }
@@ -206,15 +193,26 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn create_collection(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
-        let collection = query.collection();
+        let name = query.collection();
         let db = self.data_base(&query.data_base());
-        let result = db.create_collection(query.collection(), None).await;
-        if result.is_err() {
-            let exception = ConnectException::new(result.err().unwrap().to_string());
+        let result = db.create_collection(&name, None).await;
+        if let Err(result) = result {
+            let exception = ConnectException::new(result.to_string());
             return Err(exception);
         }
 
-        Ok(collection)
+        let collection: Collection<Document> = db.collection(&name);
+
+        if query.fields().len() > 0 {
+            let indexes = FieldData::collection_as_mongo_create(query.fields())?;
+            if let Err(result) = collection.create_indexes(indexes, None).await {
+                let _ = self.drop_collection(query).await?;
+                let exception = ConnectException::new(result.to_string());
+                return Err(exception);
+            }
+        }
+
+        Ok(name)
     }
 
     async fn drop_collection(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {

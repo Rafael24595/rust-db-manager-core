@@ -1,5 +1,8 @@
 pub mod commons {
     pub mod configuration {
+        pub mod definition {
+            pub mod mongo_db;
+        }
         pub mod configuration;
     }
     pub mod exception {
@@ -9,11 +12,14 @@ pub mod commons {
 }
 pub mod infrastructure {
     pub mod repository {
+        pub mod mongo_db {
+            pub mod extractor_metadata_mongo_db;
+            pub mod mongo_db_repository;
+            pub mod mongo_utils;
+        }
         pub mod db_dictionary;
         pub mod e_db_repository;
-        pub mod extractor_metadata_mongo_db;
         pub mod i_db_repository;
-        pub mod mongo_db_repository;
     }
     pub mod db_service_lite;
     pub mod db_service;
@@ -27,6 +33,7 @@ pub mod domain {
             pub mod field_attribute_definition;
             pub mod field_definition;
         }
+        pub mod collection_definition;
     }
     pub mod filter {
         pub mod data_base_query;
@@ -35,6 +42,11 @@ pub mod domain {
         pub mod filter_element;
     }
     pub mod generate {
+        pub mod field {
+            pub mod field_attribute;
+            pub mod field_data;
+            pub mod field_reference;
+        }
         pub mod e_collection_field;
         pub mod collection_field;
         pub mod generate_database_query;

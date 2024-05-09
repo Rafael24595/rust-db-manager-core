@@ -1,17 +1,15 @@
 use serde::Deserialize;
 
-#[derive(Clone, Deserialize)]
-pub struct FieldAttributeDefaultDefinition {
+#[derive(Debug, Clone, Deserialize)]
+pub struct FieldAttribute {
     key: String,
-    value: String
+    value: String,
 }
 
-impl FieldAttributeDefaultDefinition {
-    
+impl FieldAttribute {
+
     pub fn new(key: String, value: String) -> Self {
-        Self {
-            key, value
-        }
+        Self { key, value }
     }
 
     pub fn key(&self) -> String {

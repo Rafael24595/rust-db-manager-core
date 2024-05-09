@@ -1,22 +1,23 @@
-use super::{e_field_category::EFieldCategory, e_field_code::EFieldCode, field_attribute_definition::FieldAttributeDefinition};
+use serde::Deserialize;
 
-#[derive(Clone)]
+use super::{e_field_code::EFieldCode, field_attribute_definition::FieldAttributeDefinition};
+
+#[derive(Clone, Deserialize)]
 pub struct FieldDefinition {
     order: usize,
     name: String,
     code: EFieldCode,
-    category: EFieldCategory,
-    size: bool,
+    swsize: bool,
     multiple: bool,
     attributes: Vec<FieldAttributeDefinition>
 }
 
 impl FieldDefinition {
     
-    pub fn new(order: usize, name: String, code: EFieldCode, category: EFieldCategory, size: bool, multiple: bool, attributes: Vec<FieldAttributeDefinition>) -> Self {
+    pub fn new(order: usize, name: String, code: EFieldCode, swsize: bool, multiple: bool, attributes: Vec<FieldAttributeDefinition>) -> Self {
         Self {
             order, name, code,
-            category, size, multiple,
+            swsize, multiple,
             attributes
         }
     }
@@ -33,12 +34,8 @@ impl FieldDefinition {
         self.code.clone()
     }
 
-    pub fn category(&self) -> EFieldCategory {
-        self.category.clone()
-    }
-
-    pub fn size(&self) -> bool {
-        self.size
+    pub fn swsize(&self) -> bool {
+        self.swsize
     }
 
     pub fn multiple(&self) -> bool {

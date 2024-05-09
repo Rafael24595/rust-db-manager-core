@@ -1,4 +1,4 @@
-use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_group_data::DataBaseDataGroup, definition::field::field_definition::FieldDefinition, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}, infrastructure::repository::i_db_repository::IDBRepository};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_group_data::DataBaseDataGroup, definition::{collection_definition::CollectionDefinition, field::field_definition::FieldDefinition}, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}, infrastructure::repository::i_db_repository::IDBRepository};
 
 #[derive(Clone)]
 pub struct Service<T: IDBRepository> {
@@ -39,7 +39,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.data_base_collections_metadata(query).await;
     }
 
-    pub async fn collection_accept_definition(&self) -> Result<Vec<FieldDefinition>, ConnectException> {
+    pub async fn collection_accept_definition(&self) -> Result<CollectionDefinition, ConnectException> {
         return self.repository.collection_accept_definition().await;
     }
 

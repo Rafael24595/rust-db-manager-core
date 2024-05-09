@@ -1,6 +1,8 @@
+use serde::Deserialize;
+
 use super::field_attribute_default_definition::FieldAttributeDefaultDefinition;
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct FieldAttributeDefinition {
     name: String,
     code: String,

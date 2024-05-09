@@ -221,9 +221,6 @@ impl ExtractorMetadataMongoDb {
         let mut index_sizes = 0;
 
         for collection_info in collections_info {
-            for x in collection_info.iter() {
-                println!("{} = {:?}", x.0, collection_info.get(x.0).unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>())
-            }
             count = count + collection_info.get("count").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
             size =  size + collection_info.get("size").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
             storage_size  = storage_size + collection_info.get("storageSize").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
