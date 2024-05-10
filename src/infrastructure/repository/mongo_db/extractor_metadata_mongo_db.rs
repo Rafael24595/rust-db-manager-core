@@ -3,15 +3,15 @@ use std::time::Duration;
 use chrono::Local;
 use mongodb::bson::{Bson, Document};
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::data_base_group_data::DataBaseDataGroup};
+use crate::{commons::exception::connect_exception::ConnectException, domain::table::table_data_group::TableDataGroup};
 
 pub(crate) struct ExtractorMetadataMongoDb {
 }
 
 impl ExtractorMetadataMongoDb {
     
-    pub(crate) fn from_db(server_info: &Document) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
-        let mut metadata: Vec<DataBaseDataGroup> = Vec::new();
+    pub(crate) fn from_db(server_info: &Document) -> Result<Vec<TableDataGroup>, ConnectException> {
+        let mut metadata: Vec<TableDataGroup> = Vec::new();
         metadata.push(Self::metadata_general(server_info)?);
         metadata.push(Self::metadata_connection(server_info)?);
         metadata.push(Self::metadata_lock(server_info)?);
@@ -20,8 +20,8 @@ impl ExtractorMetadataMongoDb {
         Ok(metadata)
     }
 
-    fn metadata_general(server_info: &Document) -> Result<DataBaseDataGroup, ConnectException> {
-        let mut group = DataBaseDataGroup::new(0, String::from("general"));
+    fn metadata_general(server_info: &Document) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(0, String::from("general"));
 
         let n_timestamp = server_info.get("uptimeMillis")
             .unwrap_or(&Bson::String(String::from("0")))
@@ -65,8 +65,8 @@ impl ExtractorMetadataMongoDb {
         Ok(group)
     }
 
-    fn metadata_connection(server_info: &Document) -> Result<DataBaseDataGroup, ConnectException> {
-        let mut group = DataBaseDataGroup::new(1, String::from("connection"));
+    fn metadata_connection(server_info: &Document) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(1, String::from("connection"));
 
         let o_connections = server_info.get("connections");
         if o_connections.is_none() {
@@ -100,8 +100,8 @@ impl ExtractorMetadataMongoDb {
         Ok(group)
     }
 
-    fn metadata_lock(server_info: &Document) -> Result<DataBaseDataGroup, ConnectException> {
-        let mut group = DataBaseDataGroup::new(2, String::from("global_lock"));
+    fn metadata_lock(server_info: &Document) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(2, String::from("global_lock"));
 
         let o_lock = server_info.get("globalLock");
         if o_lock.is_none() {
@@ -167,8 +167,8 @@ impl ExtractorMetadataMongoDb {
         Ok(group)
     }
 
-    fn metadata_operation(server_info: &Document) -> Result<DataBaseDataGroup, ConnectException> {
-        let mut group = DataBaseDataGroup::new(3, String::from("operation"));
+    fn metadata_operation(server_info: &Document) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(3, String::from("operation"));
 
         let o_connections = server_info.get("opcounters");
         if o_connections.is_none() {
@@ -202,15 +202,24 @@ impl ExtractorMetadataMongoDb {
         Ok(group)
     }
 
-    pub(crate) fn from_collection(collection_info: Document) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
-        Self::from_collections(vec![collection_info])
+    pub(crate) fn from_collection(collection_info: Document) -> Result<Vec<TableDataGroup>, ConnectException> {
+        let mut metadata: Vec<TableDataGroup> = Vec::new();
+        metadata.push(Self::_from_collections(vec![collection_info])?);
+        Ok(metadata)
     }
 
-    pub(crate) fn from_collections(collections_info: Vec<Document>) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
-        let mut group = DataBaseDataGroup::new(0, String::from("collection"));
-
+    pub(crate) fn from_collections(collections_info: Vec<Document>) -> Result<Vec<TableDataGroup>, ConnectException> {
         let collections = collections_info.len();
-        
+        let mut group = Self::_from_collections(collections_info)?;
+        group.push(String::from("Collections"), collections.to_string());
+        let mut metadata: Vec<TableDataGroup> = Vec::new();
+        metadata.push(group);
+        Ok(metadata)
+    }
+
+    fn _from_collections(collections_info: Vec<Document>) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(0, String::from("collection"));
+
         let mut count = 0;
         let mut size = 0;
         let mut storage_size = 0;
@@ -231,7 +240,6 @@ impl ExtractorMetadataMongoDb {
             index_sizes = index_sizes + collection_info.get("indexSizes").unwrap_or(&Bson::String(String::new())).to_string().parse::<i64>().unwrap_or_default();
         }
 
-        group.push(String::from("Collections"), collections.to_string());
         group.push(String::from("Documents"), count.to_string());
         group.push(String::from("Data size"), format!("{:?} Bytes", size));
         group.push(String::from("Storage size"), format!("{:?} Bytes", storage_size));
@@ -241,10 +249,7 @@ impl ExtractorMetadataMongoDb {
         group.push(String::from("Total Size"), total_size.to_string());
         group.push(String::from("Indexes"), index_sizes.to_string());
 
-        let mut metadata: Vec<DataBaseDataGroup> = Vec::new();
-        metadata.push(group);
-
-        Ok(metadata)
+        Ok(group)
     }
 
 }

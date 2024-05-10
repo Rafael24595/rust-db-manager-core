@@ -1,7 +1,7 @@
 use mongodb::{bson::{doc, Document}, options::IndexOptions, IndexModel};
 use serde_json::from_str;
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::{definition::field::e_field_code::EFieldCode, filter::{e_filter_category::EFilterCategory, filter_element::FilterElement, filter_value::FilterValue}, generate::field::field_data::FieldData}};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{field::{e_field_code::EFieldCode, generate::field_data::FieldData}, filter::{e_filter_category::EFilterCategory, filter_element::FilterElement, filter_value::FilterValue}}};
 
 pub struct QueryItems {
     and_fields: Vec<String>,

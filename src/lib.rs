@@ -25,15 +25,30 @@ pub mod infrastructure {
     pub mod db_service;
 }
 pub mod domain {
-    pub mod definition {
-        pub mod field {
-            pub mod e_field_category;
-            pub mod e_field_code;
+    pub mod collection {
+        pub mod collection_definition;
+        pub mod generate_collection_query;
+    }
+    pub mod data_base {
+        pub mod generate_database_query;
+    }
+    pub mod document {
+        pub mod document_data;
+        pub mod document_key;
+        pub mod document_key_attribute;
+    }
+    pub mod field {
+        pub mod definition {
             pub mod field_attribute_default_definition;
             pub mod field_attribute_definition;
             pub mod field_definition;
         }
-        pub mod collection_definition;
+        pub mod generate {
+            pub mod field_attribute;
+            pub mod field_data;
+            pub mod field_reference;
+        }
+        pub mod e_field_code;
     }
     pub mod filter {
         pub mod data_base_query;
@@ -41,20 +56,11 @@ pub mod domain {
         pub mod filter_value;
         pub mod filter_element;
     }
-    pub mod generate {
-        pub mod field {
-            pub mod field_attribute;
-            pub mod field_data;
-            pub mod field_reference;
-        }
-        pub mod e_collection_field;
-        pub mod collection_field;
-        pub mod generate_database_query;
-        pub mod generate_collection_query;
+    pub mod table {
+        pub mod table_data_field;
+        pub mod table_data_group;
     }
     pub mod connection_data;
-    pub mod data_base_field;
-    pub mod data_base_group_data;
 }
 pub mod service {
     pub mod service;

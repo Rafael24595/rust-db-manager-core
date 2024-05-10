@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use mongodb::{
-    bson::{doc, to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
+    bson::{doc, document, oid, to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
 };
 
 use futures_util::stream::StreamExt;
@@ -11,12 +11,7 @@ use serde_json::{
 };
 use uuid::Uuid;
 
-use crate::{
-    commons::{configuration::definition::mongo_db::mongo_db, exception::connect_exception::ConnectException}, 
-    domain::{
-        connection_data::ConnectionData, data_base_group_data::DataBaseDataGroup, definition::collection_definition::CollectionDefinition, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, generate::{field::field_data::FieldData, generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}
-    }, infrastructure::repository::i_db_repository::IDBRepository
-};
+use crate::{commons::{configuration::definition::mongo_db::mongo_db, exception::connect_exception::ConnectException}, domain::{collection::{collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_key::DocumentKey, document_key_attribute::DocumentKeyAttribute}, field::generate::field_data::FieldData, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, table::table_data_group::TableDataGroup}, infrastructure::repository::i_db_repository::IDBRepository};
 
 use super::extractor_metadata_mongo_db::ExtractorMetadataMongoDb;
 
@@ -101,8 +96,38 @@ impl MongoDbRepository {
             .run_command(doc! {"collStats": collection}, None).await.unwrap())
     }
 
-}
+    fn document_keys(&self, document: Document) -> Result<Vec<DocumentKey>, ConnectException> {
+        let mut keys = Vec::new();
 
+        let key = "_id";
+
+        let o_id = document.get(key);
+        if let None = o_id {
+            let exception = ConnectException::new(String::from("Identifier not found."));
+            return Err(exception);
+        }
+
+        let base_key = match document.get_object_id(key) {
+            Ok(oid) => DocumentKey::new(
+                String::from("_id"), 
+                oid.to_hex(), 
+                Vec::from(vec![
+                    DocumentKeyAttribute::new(String::from("$oid"), String::from("true"))
+                ]
+            )),
+            Err(_) => DocumentKey::new(
+                String::from(key), 
+                o_id.unwrap().to_string(),
+                Vec::new()
+            ),
+        };
+        
+        keys.push(base_key);
+
+        Ok(keys)
+    }
+
+}
 
 #[async_trait]
 impl IDBRepository for MongoDbRepository {
@@ -112,7 +137,7 @@ impl IDBRepository for MongoDbRepository {
         return Ok(());
     }
 
-    async fn data_base_metadata(&self) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    async fn data_base_metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException> {
         let server_info = &self.client.database("admin")
             .run_command(doc! {"serverStatus": 1}, None).await.unwrap();
 
@@ -160,7 +185,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(result.ok().unwrap())
     }
 
-    async fn data_base_collections_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    async fn data_base_collections_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let mut documents = Vec::new();
         
         let collections = self.list_collections(query).await?;
@@ -180,7 +205,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(definition)
     }
 
-    async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let document = self.collections_metadata_document(query.data_base(), query.collection()).await?;
 
         ExtractorMetadataMongoDb::from_collection(document)
@@ -189,7 +214,7 @@ impl IDBRepository for MongoDbRepository {
     async fn collection_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException> {
         let collections = self.find(query).await?;
         
-        Ok(collections.iter().any(|name| name == &query.collection()))
+        Ok(collections.iter().any(|document| &document.collection() == &query.collection()))
     }
 
     async fn create_collection(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
@@ -236,7 +261,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(result.ok().unwrap())
     }
 
-    async fn find(&self, query: &DataBaseQuery) -> Result<Option<String>, ConnectException> {
+    async fn find(&self, query: &DataBaseQuery) -> Result<Option<DocumentData>, ConnectException> {
         let o_result = self.find_query(query).await;
         if o_result.is_err() {
             return Err(o_result.unwrap_err());
@@ -266,8 +291,8 @@ impl IDBRepository for MongoDbRepository {
         Ok(elements)
     }
 
-    async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        let mut elements = Vec::<String>::new();
+    async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
+        let mut elements = Vec::<DocumentData>::new();
         
         let mut cursor = self.find_cursor(query).await?;
         while let Some(result) = cursor.next().await {
@@ -276,14 +301,27 @@ impl IDBRepository for MongoDbRepository {
                 return Err(exception);
             }
 
-            let document = result.ok().unwrap();
+            let document: Document = result.ok().unwrap();
 
             let json = serde_json::to_string(&document);
             if json.is_err() {
                 let exception = ConnectException::new(json.unwrap_err().to_string());
                 return Err(exception);
             }
-            elements.push(json.ok().unwrap());
+                        
+            let keys = self.document_keys(document)?;
+            let base_key = keys.iter().find(|k| k.name() == "_id");
+            if let None = base_key {
+                let exception = ConnectException::new(String::from("Base identifier not found."));
+                return Err(exception);
+            }
+
+            let data = DocumentData::new(
+                query.data_base(), query.collection(), base_key.cloned(),
+                keys, json.ok().unwrap()
+            );
+
+            elements.push(data);
         }
 
         Ok(elements)
@@ -294,7 +332,7 @@ impl IDBRepository for MongoDbRepository {
         return self.find_query_lite(&fix).await;
     }
 
-    async fn find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    async fn find_all(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
         let fix = DataBaseQuery::from(query.data_base(), query.collection());
         return self.find_query(&fix).await;
     }

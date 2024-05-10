@@ -1,6 +1,8 @@
 use serde::Deserialize;
 
-use super::{e_field_code::EFieldCode, field_attribute_definition::FieldAttributeDefinition};
+use crate::domain::field::e_field_code::EFieldCode;
+
+use super::field_attribute_definition::FieldAttributeDefinition;
 
 #[derive(Clone, Deserialize)]
 pub struct FieldDefinition {

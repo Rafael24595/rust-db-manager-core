@@ -1,14 +1,14 @@
 #[derive(Debug, Clone)]
-pub struct DataBaseField {
+pub struct TableDataField {
     order: usize,
     name: String,
     value: String,
     json_type: String,
 }
 
-impl DataBaseField {
+impl TableDataField {
     
-    pub fn new(order: usize, name: String, value: String) -> DataBaseField {
+    pub fn new(order: usize, name: String, value: String) -> Self {
         Self {
             order: order,
             name: name,

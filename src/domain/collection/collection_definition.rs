@@ -1,8 +1,6 @@
 use serde::Deserialize;
 
-use crate::domain::generate::field::field_data::FieldData;
-
-use super::field::field_definition::FieldDefinition;
+use crate::domain::field::{definition::field_definition::FieldDefinition, generate::field_data::FieldData};
 
 #[derive(Clone, Deserialize)]
 pub struct CollectionDefinition {

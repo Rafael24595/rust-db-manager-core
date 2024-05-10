@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::domain::definition::field::e_field_code::EFieldCode;
+use crate::domain::field::e_field_code::EFieldCode;
 
 use super::{field_attribute::FieldAttribute, field_reference::FieldReference};
 

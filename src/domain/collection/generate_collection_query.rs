@@ -1,4 +1,4 @@
-use super::field::field_data::FieldData;
+use crate::domain::field::generate::field_data::FieldData;
 
 #[derive(Clone)]
 pub struct GenerateCollectionQuery {

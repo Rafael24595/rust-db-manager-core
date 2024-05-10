@@ -1,15 +1,15 @@
-use super::data_base_field::DataBaseField;
+use super::table_data_field::TableDataField;
 
 #[derive(Debug, Clone)]
-pub struct DataBaseDataGroup {
+pub struct TableDataGroup {
     order: usize,
     name: String,
-    fields: Vec<DataBaseField>,
+    fields: Vec<TableDataField>,
 }
 
-impl DataBaseDataGroup {
+impl TableDataGroup {
     
-    pub fn new(order: usize, name: String) -> DataBaseDataGroup {
+    pub fn new(order: usize, name: String) -> Self {
         Self {
             order: order,
             name: name,
@@ -25,13 +25,13 @@ impl DataBaseDataGroup {
         self.name.clone()
     }
 
-    pub fn fields(&self) -> Vec<DataBaseField> {
+    pub fn fields(&self) -> Vec<TableDataField> {
         self.fields.clone()
     }
 
     pub fn push(&mut self, key: String, value: String) -> &mut Self {
         self.fields.push(
-            DataBaseField::new(self.fields.len(), key, value)
+            TableDataField::new(self.fields.len(), key, value)
         );
         self
     }

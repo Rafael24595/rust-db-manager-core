@@ -1,4 +1,4 @@
-use crate::{commons::exception::connect_exception::ConnectException, domain::{data_base_group_data::DataBaseDataGroup, definition::{collection_definition::CollectionDefinition, field::field_definition::FieldDefinition}, filter::data_base_query::DataBaseQuery, generate::{generate_collection_query::GenerateCollectionQuery, generate_database_query::GenerateDatabaseQuery}}, infrastructure::repository::i_db_repository::IDBRepository};
+use crate::{commons::exception::connect_exception::ConnectException, domain::{collection::{collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, data_base::generate_database_query::GenerateDatabaseQuery, document::document_data::DocumentData, filter::data_base_query::DataBaseQuery, table::table_data_group::TableDataGroup}, infrastructure::repository::i_db_repository::IDBRepository};
 
 #[derive(Clone)]
 pub struct Service<T: IDBRepository> {
@@ -15,7 +15,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.status().await;
     }
 
-    pub async fn data_base_metadata(&self) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    pub async fn data_base_metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.data_base_metadata().await;
     }
 
@@ -35,7 +35,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.list_data_bases().await;
     }
 
-    pub async fn data_base_collections_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    pub async fn data_base_collections_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.data_base_collections_metadata(query).await;
     }
 
@@ -43,7 +43,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_accept_definition().await;
     }
 
-    pub async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<DataBaseDataGroup>, ConnectException> {
+    pub async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.collection_metadata(query).await;
     }
 
@@ -63,7 +63,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.list_collections(query).await;
     }
 
-    pub async fn find(&self, query: &DataBaseQuery) -> Result<Option<String>, ConnectException> {
+    pub async fn find(&self, query: &DataBaseQuery) -> Result<Option<DocumentData>, ConnectException> {
         return self.repository.find(query).await;
     }
 
@@ -71,7 +71,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.find_query_lite(query).await;
     }
 
-    pub async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
         return self.repository.find_query(query).await;
     }
 
@@ -79,7 +79,7 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.find_all_lite(query).await;
     }
 
-    pub async fn find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn find_all(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
         return self.repository.find_all(query).await;
     }
 
