@@ -80,8 +80,6 @@ impl MongoDbRepository {
         if pipeline.is_err() {
             return Err(pipeline.err().unwrap());
         }
-
-        println!("{:?}", pipeline.clone().unwrap());
     
         let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
         if r_cursor.is_err() {
