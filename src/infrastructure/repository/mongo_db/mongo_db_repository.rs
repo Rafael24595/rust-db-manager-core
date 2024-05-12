@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use mongodb::{
-    bson::{doc, document, oid, to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
+    bson::{doc, to_document, Document}, options::{AggregateOptions, ClientOptions}, Client, Collection, Cursor, Database
 };
 
 use futures_util::stream::StreamExt;
@@ -11,7 +11,7 @@ use serde_json::{
 };
 use uuid::Uuid;
 
-use crate::{commons::{configuration::definition::mongo_db::mongo_db, exception::connect_exception::ConnectException}, domain::{collection::{collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_key::DocumentKey, document_key_attribute::DocumentKeyAttribute}, field::generate::field_data::FieldData, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, table::table_data_group::TableDataGroup}, infrastructure::repository::i_db_repository::IDBRepository};
+use crate::{commons::{configuration::definition::mongo_db::mongo_db, exception::connect_exception::ConnectException}, domain::{collection::{collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_key::DocumentKey, document_key_attribute::DocumentKeyAttribute}, e_json_type::EJSONType, field::generate::field_data::FieldData, filter::{data_base_query::DataBaseQuery, filter_element::FilterElement}, table::table_data_group::TableDataGroup}, infrastructure::repository::i_db_repository::IDBRepository};
 
 use super::extractor_metadata_mongo_db::ExtractorMetadataMongoDb;
 
@@ -80,6 +80,8 @@ impl MongoDbRepository {
         if pipeline.is_err() {
             return Err(pipeline.err().unwrap());
         }
+
+        println!("{:?}", pipeline.clone().unwrap());
     
         let r_cursor = collection.aggregate(pipeline.ok().unwrap(), AggregateOptions::default()).await;
         if r_cursor.is_err() {
@@ -111,15 +113,23 @@ impl MongoDbRepository {
             Ok(oid) => DocumentKey::new(
                 String::from("_id"), 
                 oid.to_hex(), 
+                EJSONType::STRING,
                 Vec::from(vec![
                     DocumentKeyAttribute::new(String::from("$oid"), String::from("true"))
                 ]
             )),
-            Err(_) => DocumentKey::new(
+            Err(_) => {
+                let id = o_id.unwrap().as_str();
+                if let None = id {
+                    let exception = ConnectException::new(String::from("Identifier not found."));
+                    return Err(exception);
+                }
+                DocumentKey::new(
                 String::from(key), 
-                o_id.unwrap().to_string(),
-                Vec::new()
-            ),
+                String::from(id.unwrap()),
+                EJSONType::STRING,
+                Vec::new())
+            },
         };
         
         keys.push(base_key);

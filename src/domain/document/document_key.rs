@@ -1,17 +1,20 @@
+use crate::domain::e_json_type::EJSONType;
+
 use super::document_key_attribute::DocumentKeyAttribute;
 
 #[derive(Debug, Clone)]
 pub struct DocumentKey {
     name: String,
     value: String,
+    jtype: EJSONType,
     attributes: Vec<DocumentKeyAttribute>
 }
 
 impl DocumentKey {
     
-    pub fn new(name: String, value: String, attributes: Vec<DocumentKeyAttribute>) -> Self {
+    pub fn new(name: String, value: String, jtype: EJSONType, attributes: Vec<DocumentKeyAttribute>) -> Self {
         Self {
-            name, value, attributes
+            name, value, jtype, attributes
         }
     }
 
@@ -21,6 +24,10 @@ impl DocumentKey {
 
     pub fn value(&self) -> String {
         self.value.clone()
+    }
+
+    pub fn jtype(&self) -> EJSONType {
+        self.jtype.clone()
     }
 
     pub fn attributes(&self) -> Vec<DocumentKeyAttribute> {

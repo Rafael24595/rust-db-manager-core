@@ -1,6 +1,7 @@
 #[derive(Clone, PartialEq)]
 pub enum EFilterCategory {
-    ID,
+    IDSTRING,
+    IDNUMERIC,
     QUERY,
     STRING,
     BOOLEAN,

@@ -1,12 +1,12 @@
-use mongodb::{bson::{doc, Document}, options::IndexOptions, IndexModel};
+use mongodb::{bson::{doc, oid::ObjectId, Bson, Document}, options::IndexOptions, IndexModel};
 use serde_json::from_str;
 
 use crate::{commons::exception::connect_exception::ConnectException, domain::{field::{e_field_code::EFieldCode, generate::field_data::FieldData}, filter::{e_filter_category::EFilterCategory, filter_element::FilterElement, filter_value::FilterValue}}};
 
 pub struct QueryItems {
-    and_fields: Vec<String>,
-    or_fields: Vec<String>,
-    queries: Vec<String>
+    and_fields: Vec<Document>,
+    or_fields: Vec<Document>,
+    queries: Vec<Document>
 }
 
 impl FilterElement {
@@ -15,38 +15,30 @@ impl FilterElement {
         let mut registry = QueryItems {and_fields: Vec::new(), or_fields: Vec::new(), queries: Vec::new()};
         registry = self._as_mongo_agregate(registry);
 
-        let mut result = Vec::<String>::new();
-        let mut matches_collection = Vec::<String>::new();
+        let mut result = doc! {};
+        let mut matches_collection = doc! {};
+
+        let mut pipeline = Vec::new();
+
 
         if !registry.and_fields.is_empty() {
-            let match_string = format!("\"$and\": [ {} ]", registry.and_fields.join(", "));
-            matches_collection.push(match_string);
+            matches_collection.insert("$and",  registry.and_fields);
         }
 
         if !registry.or_fields.is_empty() {
-            let match_string = format!("\"$or\": [ {} ]", registry.or_fields.join(", "));
-            matches_collection.push(match_string);
+            matches_collection.insert("$or",  registry.or_fields);
         }
 
         if !matches_collection.is_empty() {
-            let match_string = format!("{{ \"$match\": {{ {} }} }}", matches_collection.join(", "));
-            result.push(match_string);
+            result.insert("$match",  matches_collection);
+            pipeline.push(result);
         }
 
         if !registry.queries.is_empty() {
-            let query_string = registry.queries.join(", ");
-            result.push(query_string);
+            pipeline.append(&mut registry.queries);
         }
 
-        let pipeline_str = &format!("[ {} ]", result.join(", "));
-
-        let pipeline: Result<Vec<Document>, serde_json::Error> = from_str(pipeline_str);
-        if pipeline.is_err() {
-            let exception = ConnectException::new(pipeline.err().unwrap().to_string());
-            return Err(exception);
-        }
-
-        return Ok(pipeline.ok().unwrap());
+        Ok(pipeline)
     }
 
     fn _as_mongo_agregate(&self, mut registry: QueryItems) -> QueryItems {
@@ -54,7 +46,7 @@ impl FilterElement {
         let field = self.field();
 
         let result = f_value.as_mongo_agregate(registry);
-        let mut value = result.0;
+        let value = result.0;
         registry = result.1;
 
         let category = f_value.category();
@@ -64,26 +56,23 @@ impl FilterElement {
         }
 
         if category == EFilterCategory::COLLECTION {
-            let mut block = Vec::<String>::new();
+            let mut block = doc! {};
 
             if !registry.and_fields.is_empty() {
-                let block_and = format!("\"$and\": [ {} ]", registry.and_fields.join(", "));
-                block.push(block_and);
+                block.insert("$and",  registry.and_fields.clone());
                 registry.and_fields.clear();
             }
 
             if !registry.and_fields.is_empty() {
-                let block_or = format!("\"$or\": [ {} ]", registry.or_fields.join(", "));
-                block.push(block_or);
+                block.insert("$or",  registry.or_fields.clone());
                 registry.or_fields.clear();
             }
 
             if !block.is_empty() {
-                let query = format!(" {{ {} }} ", block.join(", "));
                 if self.is_or() {
-                    registry.or_fields.push(query);
+                    registry.or_fields.push(block);
                 } else {
-                    registry.and_fields.push(query);
+                    registry.and_fields.push(block);
                 }   
             }
 
@@ -91,15 +80,24 @@ impl FilterElement {
         }
 
         if category == EFilterCategory::QUERY {
-            registry.queries.push(value);
+            let document = value.as_document();
+            //TODO: Error
+            registry.queries.push(document.cloned().unwrap());
             return registry;    
         }
 
+        let query;
         if self.is_negate() {
-            value = format!("{{ \"$not\": {{ \"$eq\": {} }} }}", value);
+            query = doc! {
+                field: {
+                    "$not": {
+                        "$eq": value
+                    }
+                }
+            };
+        } else {
+            query = doc! {field: value};
         }
-
-        let query = format!("{{ \"{}\": {} }}", field, value);
 
         if self.is_or() {
             registry.or_fields.push(query);
@@ -114,16 +112,37 @@ impl FilterElement {
 
 impl FilterValue {
     
-    pub fn as_mongo_agregate(&self, registry: QueryItems) -> (String, QueryItems) {
+    pub fn as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
         let value = self.value();
         match self.category() {
-            EFilterCategory::ID => (format!("\"{}\"", value), registry),
-            EFilterCategory::QUERY => (value, registry),
-            EFilterCategory::STRING => (format!("\"{}\"", value), registry),
-            EFilterCategory::BOOLEAN => (value, registry),
-            EFilterCategory::NUMERIC => (value, registry),
-            EFilterCategory::COLLECTION => (value, self.collection_as_mongo_agregate(registry)),
-            EFilterCategory::ROOT => (value, self.collection_as_mongo_agregate(registry)),
+            EFilterCategory::IDNUMERIC | EFilterCategory::IDSTRING => {
+                let attributes = self.attributes();
+                let oid = attributes.iter().find(|a| a.key() == "$oid");
+                if let Some(_) = oid {
+                    let oid = ObjectId::parse_str(value);
+                    //TODO: Error
+                    return (Bson::ObjectId(oid.unwrap()), registry);
+                }
+                (Bson::String(value), registry)
+            },
+            EFilterCategory::QUERY => {
+                let pipeline: Result<Document, serde_json::Error> = from_str(&value);
+                //TODO: Error
+                (Bson::Document(pipeline.unwrap()), registry)
+            },
+            EFilterCategory::STRING => (Bson::String(value), registry),
+            EFilterCategory::BOOLEAN => {
+                let boolean = value.parse::<bool>();
+                //TODO: Error
+                (Bson::Boolean(boolean.unwrap()), registry)
+            },
+            EFilterCategory::NUMERIC => {
+                let integer = value.parse::<i64>();
+                //TODO: Error
+                (Bson::Int64(integer.unwrap()), registry)
+            },
+            EFilterCategory::COLLECTION => (Bson::String(value), self.collection_as_mongo_agregate(registry)),
+            EFilterCategory::ROOT => (Bson::String(value), self.collection_as_mongo_agregate(registry)),
         }
     }
 

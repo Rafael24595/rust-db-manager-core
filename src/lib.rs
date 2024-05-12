@@ -54,12 +54,14 @@ pub mod domain {
         pub mod data_base_query;
         pub mod e_filter_category;
         pub mod filter_value;
+        pub mod filter_value_attribute;
         pub mod filter_element;
     }
     pub mod table {
         pub mod table_data_field;
         pub mod table_data_group;
     }
+    pub mod e_json_type;
     pub mod connection_data;
 }
 pub mod service {
