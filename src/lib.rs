@@ -13,6 +13,7 @@ pub mod commons {
 pub mod infrastructure {
     pub mod repository {
         pub mod mongo_db {
+            pub mod e_action;
             pub mod extractor_metadata_mongo_db;
             pub mod mongo_db_repository;
             pub mod mongo_utils;
@@ -36,6 +37,7 @@ pub mod domain {
         pub mod document_data;
         pub mod document_key;
         pub mod document_key_attribute;
+        pub mod document_schema;
     }
     pub mod field {
         pub mod definition {
