@@ -453,7 +453,7 @@ impl IDBRepository for MongoDbRepository {
         let comments = Vec::from(vec![
             String::from("If '_id' field is not defined it will be created with an ObjectId default value.")
         ]);
-        Ok(DocumentSchema::new(comments, fields))
+        Ok(DocumentSchema::new(comments, false, fields))
     }
 
     async fn insert(&self, query: &DataBaseQuery, value: &str) -> Result<DocumentData, ConnectException> {
