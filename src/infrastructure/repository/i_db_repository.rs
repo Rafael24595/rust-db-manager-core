@@ -31,6 +31,9 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn collection_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException>;
     async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
     async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
+    async fn collection_rename(&self, query: &DataBaseQuery, name: &str) -> Result<String, ConnectException>;
+    async fn collection_export(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException>;
+    async fn collection_import(&self, query: &DataBaseQuery, documents: Vec<String>) -> Result<String, ConnectException>;
 
     async fn find_query_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException>;

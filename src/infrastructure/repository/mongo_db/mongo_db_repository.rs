@@ -156,7 +156,7 @@ impl MongoDbRepository {
         Ok(keys)
     }
 
-    async fn action(&self, query: &DataBaseQuery, action: EAction, value: Option<&str>) -> Result<Vec<DocumentData>, ConnectException> {
+    async fn query_action(&self, query: &DataBaseQuery, action: EAction, value: Option<&str>) -> Result<Vec<DocumentData>, ConnectException> {
         let mut elements = Vec::<DocumentData>::new();
         
         let collection = self.collection_from_query(&query);
@@ -370,12 +370,38 @@ impl IDBRepository for MongoDbRepository {
     async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         let collection = self.collection_from_resource(&query);
         let result = collection.drop(None).await;
-        if result.is_err() {
-            let exception = ConnectException::new(result.err().unwrap().to_string());
+        if let Err(error) = result {
+            let exception = ConnectException::new(error.to_string());
             return Err(exception);
         }
 
         Ok(query.collection())
+    }
+
+    async fn collection_rename(&self, query: &DataBaseQuery, name: &str) -> Result<String, ConnectException> {
+        let admin_db = &self.client.database("admin");
+        let command = doc! {
+            "renameCollection": format!("{}.{}", query.data_base(), query.collection()),
+            "to": format!("{}.{}", query.data_base(), name)
+        };
+
+        if let Err(error) = admin_db.run_command(command, None).await {
+            let exception = ConnectException::new(error.to_string());
+            return Err(exception);
+        }
+
+        Ok(String::from(name))
+    }
+
+    async fn collection_export(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
+        self.find_all(query).await
+    }
+
+    async fn collection_import(&self, query: &DataBaseQuery, documents: Vec<String>) -> Result<String, ConnectException> {
+        for document in documents {
+            self.insert(query, &document).await?;
+        }
+        Ok(String::new())
     }
 
     async fn find_query_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
@@ -400,7 +426,7 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
-        Ok(self.action(query, EAction::FIND, None).await?)
+        Ok(self.query_action(query, EAction::FIND, None).await?)
     }
 
     async fn find_all_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
@@ -447,11 +473,11 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn update(&self, query: &DataBaseQuery, value: &str) -> Result<Vec<DocumentData>, ConnectException> {
-        Ok(self.action(query, EAction::UPDATE, Some(value)).await?)
+        Ok(self.query_action(query, EAction::UPDATE, Some(value)).await?)
     }
 
     async fn delete(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
-        Ok(self.action(query, EAction::DELETE, None).await?)
+        Ok(self.query_action(query, EAction::DELETE, None).await?)
     }
     
 }

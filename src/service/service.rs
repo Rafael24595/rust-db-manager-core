@@ -72,6 +72,18 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_drop(query).await;
     }
 
+    pub async fn collection_rename(&self, query: &DataBaseQuery, name: &str) -> Result<String, ConnectException> {
+        return self.repository.collection_rename(query, name).await;
+    }
+
+    pub async fn collection_export(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
+        return self.repository.collection_export(query).await;
+    }
+
+    pub async fn collection_import(&self, query: &DataBaseQuery, documents: Vec<String>) -> Result<String, ConnectException> {
+        return self.repository.collection_import(query, documents).await;
+    }
+
     pub async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.collection_find_all(query).await;
     }
