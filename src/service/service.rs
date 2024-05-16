@@ -2,12 +2,11 @@ use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
         collection::{
-            collection_definition::CollectionDefinition,
-            generate_collection_query::GenerateCollectionQuery,
+            collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery
         },
         data_base::generate_database_query::GenerateDatabaseQuery,
         document::{document_data::DocumentData, document_schema::DocumentSchema},
-        filter::data_base_query::DataBaseQuery,
+        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery, document_query::DocumentQuery},
         table::table_data_group::TableDataGroup,
     },
     infrastructure::repository::i_db_repository::IDBRepository,
@@ -56,11 +55,11 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_accept_schema().await;
     }
 
-    pub async fn collection_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
+    pub async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.collection_metadata(query).await;
     }
 
-    pub async fn collection_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException> {
+    pub async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {
         return self.repository.collection_exists(query).await;
     }
 
@@ -72,15 +71,15 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_drop(query).await;
     }
 
-    pub async fn collection_rename(&self, query: &DataBaseQuery, name: &str) -> Result<String, ConnectException> {
+    pub async fn collection_rename(&self, query: &CollectionQuery, name: &str) -> Result<String, ConnectException> {
         return self.repository.collection_rename(query, name).await;
     }
 
-    pub async fn collection_export(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
+    pub async fn collection_export(&self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
         return self.repository.collection_export(query).await;
     }
 
-    pub async fn collection_import(&self, query: &DataBaseQuery, documents: Vec<String>) -> Result<String, ConnectException> {
+    pub async fn collection_import(&self, query: &CollectionQuery, documents: Vec<String>) -> Result<String, ConnectException> {
         return self.repository.collection_import(query, documents).await;
     }
 
@@ -88,39 +87,31 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_find_all(query).await;
     }
 
-    pub async fn find_query_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        return self.repository.find_query_lite(query).await;
-    }
-
-    pub async fn find_query(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
+    pub async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         return self.repository.find_query(query).await;
     }
 
-    pub async fn find_all_lite(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
-        return self.repository.find_all_lite(query).await;
-    }
-
-    pub async fn find_all(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>, ConnectException> {
+    pub async fn find_all(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         return self.repository.find_all(query).await;
     }
     
-    pub async fn find(&self, query: &DataBaseQuery) -> Result<Option<DocumentData>, ConnectException> {
+    pub async fn find(&self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
         return self.repository.find(query).await;
     }
 
-    pub async fn schema(&self, query: &DataBaseQuery) ->  Result<DocumentSchema, ConnectException> {
+    pub async fn schema(&self, query: &CollectionQuery) ->  Result<DocumentSchema, ConnectException> {
         return self.repository.schema(query).await;
     }
 
-    pub async fn insert(&self, query: &DataBaseQuery, value: &str) -> Result<DocumentData, ConnectException> {
+    pub async fn insert(&self, query: &CollectionQuery, value: &str) -> Result<DocumentData, ConnectException> {
         return self.repository.insert(query, &value).await;
     }
 
-    pub async fn update(&self, query: &DataBaseQuery, value: &str) -> Result<Vec<DocumentData>, ConnectException> {
+    pub async fn update(&self, query: &DocumentQuery, value: &str) -> Result<Vec<DocumentData>, ConnectException> {
         return self.repository.update(query, value).await;
     }
 
-    pub async fn delete(&self, query: &DataBaseQuery) -> Result<Vec<DocumentData>,ConnectException> {
+    pub async fn delete(&self, query: &DocumentQuery) -> Result<Vec<DocumentData>,ConnectException> {
         return self.repository.delete(query).await;
     }
 

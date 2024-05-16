@@ -27,6 +27,7 @@ pub mod infrastructure {
 }
 pub mod domain {
     pub mod collection {
+        pub mod collection_data;
         pub mod collection_definition;
         pub mod generate_collection_query;
     }
@@ -53,7 +54,9 @@ pub mod domain {
         pub mod e_field_code;
     }
     pub mod filter {
+        pub mod collection_query;
         pub mod data_base_query;
+        pub mod document_query;
         pub mod e_filter_category;
         pub mod filter_value;
         pub mod filter_value_attribute;
