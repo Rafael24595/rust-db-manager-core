@@ -158,22 +158,31 @@ impl MongoDbRepository {
         let collection = self.collection(&query.data_base(), &query.collection());
 
         let mut cursor = self.find_cursor(query).await?;
+
+        let mut ids_to_action = vec![];
         
         while let Some(r_document) = cursor.next().await {
-            if r_document.is_err() {
-                let exception = ConnectException::new(r_document.unwrap_err().to_string());
+            if let Err(error) = r_document {
+                let exception = ConnectException::new(error.to_string());
                 return Err(exception);
             }
-    
+
             let document = r_document.unwrap();
+
+            if let Some(id) = document.get("_id") {
+                ids_to_action.push(id.clone());
+            }
+    
             let data = self.make_document_data(query.data_base(), query.collection(), &document)?;
             documents.push(data);
-            
-            match action {
-                EAction::FIND => (),
-                EAction::DELETE => self.delete_document(&collection, &document).await?,
-                EAction::UPDATE => self.update_document(&collection, &document, value).await?,
+
+            if action == EAction::UPDATE {
+                self.update_document(&collection, &document, value).await?;
             }
+        }
+
+        if action == EAction::DELETE {
+            self.delete_document(&collection, ids_to_action).await?;
         }
         
         let r_total = collection.estimated_document_count(None).await;
@@ -200,8 +209,8 @@ impl MongoDbRepository {
 
     fn make_document_data(&self, data_base: String, collection: String, document: &Document) -> Result<DocumentData, ConnectException> {
         let json = serde_json::to_string(&document);
-        if json.is_err() {
-            let exception = ConnectException::new(json.unwrap_err().to_string());
+        if let Err(error) = json {
+            let exception = ConnectException::new(error.to_string());
             return Err(exception);
         }
 
@@ -218,12 +227,15 @@ impl MongoDbRepository {
         ))
     }
 
-    async fn delete_document(&self, collection: &Collection<Document>, document: &Document) -> Result<(), ConnectException> {
-        let result = collection.delete_one(document.clone(), None).await;
+    async fn delete_document(&self, collection: &Collection<Document>, id_documents: Vec<Bson>) -> Result<(), ConnectException> {
+        let delete_filter = doc! { "_id": { "$in": id_documents } };
+        
+        let result = collection.delete_many(delete_filter, None).await;
         if result.is_err() {
             let exception = ConnectException::new(result.unwrap_err().to_string());
             return Err(exception);
         }
+        
         Ok(())
     }
 
@@ -417,10 +429,18 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn collection_import(&self, query: &CollectionQuery, documents: Vec<String>) -> Result<String, ConnectException> {
+        let collection = self.collection(&query.data_base(), &query.collection());
+
+        let mut parsed = Vec::new();
         for document in documents {
-            let fix = DocumentQuery::from(query.data_base(), query.collection(), None, None, None);
-            self.insert(query, &document).await?;
+            parsed.push(self.document_from_string(&document)?);
         }
+
+        if let Err(error) = collection.insert_many(parsed, None).await {
+            let exception = ConnectException::new(error.to_string());
+            return Err(exception);
+        }
+
         Ok(String::new())
     }
 
