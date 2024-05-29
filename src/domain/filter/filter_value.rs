@@ -1,69 +1,82 @@
 use super::{
-    e_filter_category::EFilterCategory, 
-    filter_element::FilterElement
+    e_filter_category::EFilterCategory, filter_value_attribute::FilterValueAttribute, filter_element::FilterElement
 };
 
 #[derive(Clone)]
 pub struct FilterValue {
     category: EFilterCategory,
     value: String,
+    attributes: Vec<FilterValueAttribute>,
     children: Vec<FilterElement>
 }
 
 impl FilterValue {
     
-    pub fn from_root(value: String) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::ROOT, value);
+    pub fn root(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::ROOT, value, attributes);
     }
 
-    pub fn from_query(value: String) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::QUERY, value);
+    pub fn query(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::QUERY, value, attributes);
     }
 
-    pub fn from_string(value: String) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::STRING, value);
+    pub fn id_string(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::IDSTRING, value, attributes);
+    }
+
+    pub fn id_numeric(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::IDNUMERIC, value, attributes);
+    }
+
+    pub fn string(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::STRING, value, attributes);
     }
     
-    pub fn from_bool(value: bool) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::BOOLEAN, value.to_string());
+    pub fn bool(value: bool, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::BOOLEAN, value.to_string(), attributes);
     }
 
-    pub fn from_i8(value: i8) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string());
+    pub fn i8(value: i8, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn from_i16(value: i16) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string());
+    pub fn i16(value: i16, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn from_i32(value: i32) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string());
+    pub fn i32(value: i32, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn from_i64(value: i64) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string());
+    pub fn i64(value: i64, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn from_i128(value: i128) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string());
+    pub fn i128(value: i128, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn from_filter(value: FilterElement) -> FilterValue {
-        return FilterValue::from_collection(Vec::from(vec![value]));
+    pub fn filter(value: FilterElement, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::collection(Vec::from(vec![value]));
     }
 
-    pub fn from_collection(value: Vec<FilterElement>) -> FilterValue {
-        return FilterValue::from(EFilterCategory::COLLECTION, String::new(), value);
+    pub fn root_collection(value: Vec<FilterElement>) -> FilterValue {
+        return FilterValue::from(EFilterCategory::ROOT, String::new(), Vec::new(), value);
     }
 
-    fn from_value(category: EFilterCategory, value: String) -> FilterValue {
-        return FilterValue::from(category, value, Vec::new());
+    pub fn collection(value: Vec<FilterElement>) -> FilterValue {
+        return FilterValue::from(EFilterCategory::COLLECTION, String::new(), Vec::new(), value);
     }
 
-    fn from(category: EFilterCategory, value: String, children: Vec<FilterElement>) -> FilterValue {
+    fn from_value(category: EFilterCategory, value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+        return FilterValue::from(category, value, attributes, Vec::new());
+    }
+
+    fn from(category: EFilterCategory, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
         return FilterValue {
             category,
             value,
+            attributes,
             children
         };
     }
@@ -74,6 +87,10 @@ impl FilterValue {
 
     pub fn value(&self) -> String {
         return self.value.clone();
+    }
+
+    pub fn attributes(&self) -> Vec<FilterValueAttribute> {
+        return self.attributes.clone();
     }
 
     pub fn children(&self) -> Vec<FilterElement> {

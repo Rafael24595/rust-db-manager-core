@@ -7,9 +7,11 @@ pub struct ConnectException {
 }
 
 impl fmt::Display for ConnectException {
+
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CustomError: {}", self.message)
+        write!(f, "ConnectException: {}", self.message)
     }
+    
 }
 
 impl Error for ConnectException {}

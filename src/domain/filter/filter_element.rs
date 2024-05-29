@@ -1,84 +1,154 @@
-use super::{e_filter_category::EFilterCategory, filter_value::FilterValue};
+use super::{e_filter_category::EFilterCategory, filter_value_attribute::FilterValueAttribute, filter_value::FilterValue};
 
 #[derive(Clone)]
 pub struct FilterElement {
     key: String,
     value: FilterValue,
+    direction: bool,
     negation: bool,
 }
 
 impl FilterElement {
     
     pub fn new() -> FilterElement {
-        let f_value = FilterValue::from_root(String::new());
-        return FilterElement::from(String::new(), f_value, false);
+        let f_value = FilterValue::root(String::new(), Vec::new());
+        return FilterElement::from(String::new(), f_value, true, false);
     }
 
-    pub fn from_query(value: String) -> FilterElement {
-        let f_value = FilterValue::from_query(value);
-        return FilterElement::from(String::new(), f_value, false);
+    pub fn query(value: String, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::query(value, attributes);
+        return FilterElement::from(String::new(), f_value, true, false);
     }
 
-    pub fn from_string(key: String, value: String) -> FilterElement {
-        let f_value = FilterValue::from_string(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn id_string(key: String, value: String, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::id_string(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
+    }
+
+    pub fn id_numeric(key: String, value: String, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::id_numeric(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
+    }
+
+    pub fn string(key: String, value: String, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::string(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
     
-    pub fn from_bool(key: String, value: bool) -> FilterElement {
-        let f_value = FilterValue::from_bool(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn bool(key: String, value: bool, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::bool(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
 
-    pub fn from_i8(key: String, value: i8) -> FilterElement {
-        let f_value = FilterValue::from_i8(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn i8(key: String, value: i8, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::i8(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
 
-    pub fn from_i16(key: String, value: i16) -> FilterElement {
-        let f_value = FilterValue::from_i16(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn i16(key: String, value: i16, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::i16(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
 
-    pub fn from_i32(key: String, value: i32) -> FilterElement {
-        let f_value = FilterValue::from_i32(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn i32(key: String, value: i32, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::i32(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
 
-    pub fn from_i64(key: String, value: i64) -> FilterElement {
-        let f_value = FilterValue::from_i64(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn i64(key: String, value: i64, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::i64(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
 
-    pub fn from_i128(key: String, value: i128) -> FilterElement {
-        let f_value = FilterValue::from_i128(value);
-        return FilterElement::from(key, f_value, false);
+    pub fn i128(key: String, value: i128, attributes: Vec<FilterValueAttribute>) -> FilterElement {
+        let f_value = FilterValue::i128(value, attributes);
+        return FilterElement::from(key, f_value, true, false);
     }
 
     fn from_value(key: String, value: FilterValue) -> FilterElement {
-        return FilterElement::from(key, value, false);
+        return FilterElement::from(key, value, true, false);
     }
 
-    fn from(key: String, value: FilterValue, negation: bool) -> FilterElement {
+    fn from(key: String, value: FilterValue, direction: bool, negation: bool) -> FilterElement {
         return FilterElement {
             key,
             value,
+            direction,
             negation
         };
+    }
+
+    pub fn from_id_chain(chain: String) -> FilterElement {
+        let keys: Vec<&str> = chain.split('#').collect();
+
+        let mut filter = FilterElement::new();
+
+        for key in keys {
+            let entry: Vec<&str> = key.split('=').collect();
+            if entry.len() > 1 {
+                let code = String::from(*entry.get(0).unwrap());
+                let value = String::from(*entry.get(1).unwrap());
+                filter.push(FilterElement::id_string(code, value, Vec::new()));
+            }
+        }
+
+        return filter;
+    }
+
+    pub fn from_id_chain_collection(keys: Vec<String>) -> FilterElement {
+        let mut filter = FilterElement::new();
+
+        for key in keys {
+            let child = FilterElement::from_id_chain(key).as_or_ref();
+            filter.push(child);
+        }
+
+        return filter;
     }
 
 }
 
 impl FilterElement {
     
-    pub fn push(&self, filter: FilterElement) -> FilterElement {
+    pub fn push(&mut self, mut filter: FilterElement) -> &Self {
         let mut collection = Vec::new();
-        if self.value.category() != EFilterCategory::ROOT {
-            collection.push(self.clone());
+
+        if filter.value.category() == EFilterCategory::ROOT {
+            filter.value = FilterValue::collection(filter.value.children());
         }
+
         collection.push(filter);
 
-        let value = FilterValue::from_collection(collection);
-        return FilterElement::from_value(self.key.clone(), value);
+        let value;
+        if self.value.category() == EFilterCategory::ROOT {
+            collection.append(&mut self.value.children());
+            value = FilterValue::root_collection(collection);
+        } else {
+            collection.push(self.clone());
+            value = FilterValue::collection(collection);
+        }
+
+        self.value = value;
+        
+        return self;
+    }
+
+    pub fn as_and(&mut self) -> &mut FilterElement {
+        self.direction = true;
+        return self;
+    }
+
+    pub fn as_and_ref(&mut self) -> FilterElement {
+        return self.as_and().as_ref();
+    }
+
+    pub fn as_or(&mut self) -> &mut FilterElement {
+        self.direction = false;
+        return self;
+    }
+
+    pub fn as_or_ref(&mut self) -> FilterElement {
+        return self.as_or().as_ref();
     }
 
     pub fn negate(&mut self) -> &mut FilterElement {
@@ -109,6 +179,10 @@ impl FilterElement {
 
     pub fn is_negate(&self) -> bool {
         return self.negation;
+    }
+
+    pub fn is_or(&self) -> bool {
+        return !self.direction;
     }
 
     pub fn as_ref(&self) -> FilterElement {
