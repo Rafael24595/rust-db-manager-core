@@ -72,7 +72,7 @@ impl FilterValue {
         return FilterValue::from(category, value, attributes, Vec::new());
     }
 
-    fn from(category: EFilterCategory, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
+    pub fn from(category: EFilterCategory, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
         return FilterValue {
             category,
             value,

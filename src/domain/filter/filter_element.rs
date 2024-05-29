@@ -65,11 +65,7 @@ impl FilterElement {
         return FilterElement::from(key, f_value, true, false);
     }
 
-    fn from_value(key: String, value: FilterValue) -> FilterElement {
-        return FilterElement::from(key, value, true, false);
-    }
-
-    fn from(key: String, value: FilterValue, direction: bool, negation: bool) -> FilterElement {
+    pub fn from(key: String, value: FilterValue, direction: bool, negation: bool) -> FilterElement {
         return FilterElement {
             key,
             value,
