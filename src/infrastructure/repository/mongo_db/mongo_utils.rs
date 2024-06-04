@@ -115,7 +115,7 @@ impl FilterValue {
     pub fn as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
         let value = self.value();
         match self.category() {
-            EFilterCategory::IDNUMERIC | EFilterCategory::IDSTRING => {
+            EFilterCategory::ID_NUMERIC | EFilterCategory::ID_STRING => {
                 let attributes = self.attributes();
                 let oid = attributes.iter().find(|a| a.key() == "$oid");
                 if let Some(_) = oid {

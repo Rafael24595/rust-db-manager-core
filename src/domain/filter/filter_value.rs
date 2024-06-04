@@ -21,11 +21,11 @@ impl FilterValue {
     }
 
     pub fn id_string(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::IDSTRING, value, attributes);
+        return FilterValue::from_value(EFilterCategory::ID_STRING, value, attributes);
     }
 
     pub fn id_numeric(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::IDNUMERIC, value, attributes);
+        return FilterValue::from_value(EFilterCategory::ID_NUMERIC, value, attributes);
     }
 
     pub fn string(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
