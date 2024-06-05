@@ -18,6 +18,10 @@ impl EFilterCategory {
         EFilterCategory::ROOT
     }
 
+    pub fn query_category() -> EFilterCategory {
+        EFilterCategory::QUERY
+    }
+
     pub fn items() -> Vec<EFilterCategory> {
         EFilterCategory::iter().collect()
     }
@@ -37,8 +41,8 @@ impl EFilterCategory {
 
     pub fn from_string(code: &str) -> Option<EFilterCategory> {
         match code {
-            "IDSTRING" => Some(EFilterCategory::ID_STRING),
-            "IDNUMERIC" => Some(EFilterCategory::ID_NUMERIC),
+            "ID_STRING" => Some(EFilterCategory::ID_STRING),
+            "ID_NUMERIC" => Some(EFilterCategory::ID_NUMERIC),
             "QUERY" => Some(EFilterCategory::QUERY),
             "STRING" => Some(EFilterCategory::STRING),
             "BOOLEAN" => Some(EFilterCategory::BOOLEAN),

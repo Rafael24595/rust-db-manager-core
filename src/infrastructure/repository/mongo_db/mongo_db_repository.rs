@@ -198,7 +198,7 @@ impl MongoDbRepository {
         }
 
         let data = CollectionData::new(
-            total.unwrap(),
+            cursor.count().await,
             query.limit(),
             query.skip(), 
             documents
