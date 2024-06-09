@@ -14,6 +14,7 @@ pub mod infrastructure {
     pub mod repository {
         pub mod mongo_db {
             pub mod e_action;
+            pub mod e_filter_attributes;
             pub mod extractor_metadata_mongo_db;
             pub mod mongo_db_repository;
             pub mod mongo_utils;
@@ -54,6 +55,11 @@ pub mod domain {
         pub mod e_field_code;
     }
     pub mod filter {
+        pub mod definition {
+            pub mod filter_attribute_default_definition;
+            pub mod filter_attribute_definition;
+            pub mod filter_definition;
+        }
         pub mod collection_query;
         pub mod data_base_query;
         pub mod document_query;

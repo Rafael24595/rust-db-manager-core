@@ -1,7 +1,18 @@
 use mongodb::{bson::{doc, oid::ObjectId, Bson, Document}, options::IndexOptions, IndexModel};
 use serde_json::from_str;
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::{field::{e_field_code::EFieldCode, generate::field_data::FieldData}, filter::{e_filter_category::EFilterCategory, filter_element::FilterElement, filter_value::FilterValue}}};
+use crate::{
+    commons::exception::connect_exception::ConnectException,
+    domain::{
+        field::{e_field_code::EFieldCode, generate::field_data::FieldData},
+        filter::{
+            e_filter_category::EFilterCategory, filter_element::FilterElement,
+            filter_value::FilterValue,
+        },
+    },
+};
+
+use super::e_filter_attributes::EFilterAtributtes;
 
 pub struct QueryItems {
     and_fields: Vec<Document>,
@@ -13,13 +24,12 @@ impl FilterElement {
     
     pub fn as_mongo_agregate(&self) -> Result<Vec<Document>, ConnectException> {
         let mut registry = QueryItems {and_fields: Vec::new(), or_fields: Vec::new(), queries: Vec::new()};
-        registry = self._as_mongo_agregate(registry);
+        registry = self.make_agregate(registry);
 
         let mut result = doc! {};
         let mut matches_collection = doc! {};
 
         let mut pipeline = Vec::new();
-
 
         if !registry.and_fields.is_empty() {
             matches_collection.insert("$and",  registry.and_fields);
@@ -41,7 +51,7 @@ impl FilterElement {
         Ok(pipeline)
     }
 
-    fn _as_mongo_agregate(&self, mut registry: QueryItems) -> QueryItems {
+    fn make_agregate(&self, mut registry: QueryItems) -> QueryItems {
         let f_value = self.value();
         let field = self.field();
 
@@ -49,43 +59,46 @@ impl FilterElement {
         let value = result.0;
         registry = result.1;
 
-        let category = f_value.category();
+        match f_value.category() {
+            EFilterCategory::ROOT => registry,
+            EFilterCategory::COLLECTION => self.make_collection(registry),
+            EFilterCategory::QUERY => self.make_query(registry, value),
+            _ => self.make_base(registry, field, value)
+        }
+    }
 
-        if category == EFilterCategory::ROOT {
-            return registry;    
+    fn make_collection(&self, mut registry: QueryItems) -> QueryItems {
+        let mut block = doc! {};
+
+        if !registry.and_fields.is_empty() {
+            block.insert("$and",  registry.and_fields.clone());
+            registry.and_fields.clear();
         }
 
-        if category == EFilterCategory::COLLECTION {
-            let mut block = doc! {};
-
-            if !registry.and_fields.is_empty() {
-                block.insert("$and",  registry.and_fields.clone());
-                registry.and_fields.clear();
-            }
-
-            if !registry.and_fields.is_empty() {
-                block.insert("$or",  registry.or_fields.clone());
-                registry.or_fields.clear();
-            }
-
-            if !block.is_empty() {
-                if self.is_or() {
-                    registry.or_fields.push(block);
-                } else {
-                    registry.and_fields.push(block);
-                }   
-            }
-
-            return registry;    
+        if !registry.and_fields.is_empty() {
+            block.insert("$or",  registry.or_fields.clone());
+            registry.or_fields.clear();
         }
 
-        if category == EFilterCategory::QUERY {
-            let document = value.as_document();
-            //TODO: Error
-            registry.queries.push(document.cloned().unwrap());
-            return registry;    
+        if !block.is_empty() {
+            if self.is_or() {
+                registry.or_fields.push(block);
+            } else {
+                registry.and_fields.push(block);
+            }   
         }
 
+        return registry;
+    }
+
+    fn make_query(&self, mut registry: QueryItems, value: Bson) -> QueryItems {
+        let document = value.as_document();
+        //TODO: Error
+        registry.queries.push(document.cloned().unwrap());
+        return registry;    
+    }
+
+    fn make_base(&self, mut registry: QueryItems, field: String, value: Bson) -> QueryItems {
         let query;
         if self.is_negate() {
             query = doc! {
@@ -111,46 +124,79 @@ impl FilterElement {
 }
 
 impl FilterValue {
-    
+ 
     pub fn as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
-        let value = self.value();
         match self.category() {
-            EFilterCategory::ID_NUMERIC | EFilterCategory::ID_STRING => {
-                let attributes = self.attributes();
-                let oid = attributes.iter().find(|a| a.key() == "$oid");
-                if let Some(_) = oid {
-                    let oid = ObjectId::parse_str(value);
-                    //TODO: Error
-                    return (Bson::ObjectId(oid.unwrap()), registry);
-                }
-                (Bson::String(value), registry)
-            },
-            EFilterCategory::QUERY => {
-                let pipeline: Result<Document, serde_json::Error> = from_str(&value);
-                //TODO: Error
-                (Bson::Document(pipeline.unwrap()), registry)
-            },
-            EFilterCategory::STRING => (Bson::String(value), registry),
-            EFilterCategory::BOOLEAN => {
-                let boolean = value.parse::<bool>();
-                //TODO: Error
-                (Bson::Boolean(boolean.unwrap()), registry)
-            },
-            EFilterCategory::NUMERIC => {
-                let integer = value.parse::<i64>();
-                //TODO: Error
-                (Bson::Int64(integer.unwrap()), registry)
-            },
-            EFilterCategory::COLLECTION => (Bson::String(value), self.collection_as_mongo_agregate(registry)),
-            EFilterCategory::ROOT => (Bson::String(value), self.collection_as_mongo_agregate(registry)),
+            EFilterCategory::ID_NUMERIC | EFilterCategory::ID_STRING => self.id_as_mongo_agregate(registry),
+            EFilterCategory::QUERY => self.query_as_mongo_agregate(registry),
+            EFilterCategory::STRING => self.string_as_mongo_agregate(registry),
+            EFilterCategory::BOOLEAN => self.boolean_as_mongo_agregate(registry),
+            EFilterCategory::NUMERIC => self.integer_as_mongo_agregate(registry),
+            EFilterCategory::COLLECTION => self.collection_as_mongo_agregate(registry),
+            EFilterCategory::ROOT => self.collection_as_mongo_agregate(registry),
         }
     }
 
-    fn collection_as_mongo_agregate(&self, mut registry: QueryItems) -> QueryItems {
-        for child in self.children() {
-            registry = child._as_mongo_agregate(registry);
+    pub fn id_as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
+        let attributes = self.attributes();
+        let mut value = Bson::String(self.value());
+        
+        let o_oid = attributes.iter().find(|a| a.key() == EFilterAtributtes::OID.to_string());
+        if let Some(s_oid) = o_oid {
+            let oid = s_oid.value().parse::<bool>();
+            if oid.is_ok() && oid.unwrap() {
+                let oid = ObjectId::parse_str(self.value());
+                if oid.is_ok() {
+                    value = Bson::ObjectId(oid.unwrap());
+                }
+            }
         }
-        return registry;
+        
+        (value, registry)
+    }
+
+    pub fn query_as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
+        let value = self.value();
+        let pipeline: Result<Document, serde_json::Error> = from_str(&value);
+        //TODO: Error
+        (Bson::Document(pipeline.unwrap()), registry)
+    }
+
+    pub fn string_as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
+        let attributes = self.attributes();
+        let mut value = Bson::String(self.value());
+
+        let o_regex = attributes.iter().find(|a| a.key() == EFilterAtributtes::REGEX.to_string());
+        if let Some(s_regex) = o_regex {
+            let regex = s_regex.value().parse::<bool>();
+            if regex.is_ok() && regex.unwrap() {
+                value = Bson::Document(doc! {"$regex" : self.value()});
+            }
+        }
+
+        (value, registry)
+    }
+
+    pub fn boolean_as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
+        let value = self.value();
+        let boolean = value.parse::<bool>();
+        //TODO: Error
+        (Bson::Boolean(boolean.unwrap()), registry)
+    }
+
+    pub fn integer_as_mongo_agregate(&self, registry: QueryItems) -> (Bson, QueryItems) {
+        let value = self.value();
+        let integer = value.parse::<i64>();
+        //TODO: Error
+        (Bson::Int64(integer.unwrap()), registry)
+    }
+
+    fn collection_as_mongo_agregate(&self, mut registry: QueryItems) -> (Bson, QueryItems) {
+        let value = self.value();
+        for child in self.children() {
+            registry = child.make_agregate(registry);
+        }
+        return (Bson::String(value), registry);
     }
 
 }

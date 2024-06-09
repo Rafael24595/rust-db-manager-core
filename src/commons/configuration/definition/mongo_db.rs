@@ -1,7 +1,7 @@
 use serde_json::json;
 
 //TODO: Reconsider configuration logic.
-pub fn mongo_db() -> String {
+pub fn mongo_db_collection() -> String {
     json!(
         {
             "swrelational": false,
@@ -64,6 +64,55 @@ pub fn mongo_db() -> String {
                     ],
                     "reference": []
                 }
+            ]
+        }
+    ).to_string()
+}
+
+pub fn mongo_db_filter() -> String {
+    json!(
+        {
+            "attributes": [
+                {
+                    "code": "OID",
+                    "name": "ObjectID",
+                    "description": "ObjectID",
+                    "values": [
+                        {
+                            "key": "True",
+                            "value": "true",
+                            "default": false
+                        },
+                        {
+                            "key": "False",
+                            "value": "false",
+                            "default": true
+                        }
+                    ],
+                    "applies": [
+                        "ID_STRING",
+                    ]
+                },
+                {
+                    "code": "REGEX",
+                    "name": "Regex",
+                    "description": "Filter contains",
+                    "values": [
+                        {
+                            "key": "True",
+                            "value": "true",
+                            "default": false
+                        },
+                        {
+                            "key": "False",
+                            "value": "false",
+                            "default": true
+                        }
+                    ],
+                    "applies": [
+                        "STRING"
+                    ]
+                },
             ]
         }
     ).to_string()

@@ -4,11 +4,15 @@ use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
         collection::{
-            collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery
+            collection_data::CollectionData, collection_definition::CollectionDefinition,
+            generate_collection_query::GenerateCollectionQuery,
         },
         data_base::generate_database_query::GenerateDatabaseQuery,
         document::{document_data::DocumentData, document_schema::DocumentSchema},
-        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery, document_query::DocumentQuery},
+        filter::{
+            collection_query::CollectionQuery, data_base_query::DataBaseQuery,
+            definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
+        },
         table::table_data_group::TableDataGroup,
     },
 };
@@ -34,6 +38,7 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn collection_export(&self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException>;
     async fn collection_import(&self, query: &CollectionQuery, documents: Vec<String>) -> Result<String, ConnectException>;
     
+    async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException>;
     async fn find_all(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
     async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
     async fn find(&self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException>;

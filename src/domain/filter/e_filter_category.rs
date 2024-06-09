@@ -1,6 +1,7 @@
+use serde::Deserialize;
 use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Clone, PartialEq, EnumIter)]
+#[derive(Clone, Deserialize, PartialEq, EnumIter)]
 pub enum EFilterCategory {
     ID_STRING,
     ID_NUMERIC,

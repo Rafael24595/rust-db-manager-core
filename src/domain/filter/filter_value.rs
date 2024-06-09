@@ -56,7 +56,7 @@ impl FilterValue {
         return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn filter(value: FilterElement, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+    pub fn filter(value: FilterElement) -> FilterValue {
         return FilterValue::collection(Vec::from(vec![value]));
     }
 

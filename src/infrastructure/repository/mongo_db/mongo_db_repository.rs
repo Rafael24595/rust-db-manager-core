@@ -12,12 +12,13 @@ use uuid::Uuid;
 
 use crate::{
     commons::{
-        configuration::definition::mongo_db::mongo_db,
+        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_filter},
         exception::connect_exception::ConnectException,
     },
     domain::{
         collection::{
-            collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery
+            collection_data::CollectionData, collection_definition::CollectionDefinition,
+            generate_collection_query::GenerateCollectionQuery,
         },
         connection_data::ConnectionData,
         data_base::generate_database_query::GenerateDatabaseQuery,
@@ -27,13 +28,20 @@ use crate::{
         },
         e_json_type::EJSONType,
         field::generate::field_data::FieldData,
-        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery, document_query::DocumentQuery, filter_element::FilterElement},
+        filter::{
+            collection_query::CollectionQuery, data_base_query::DataBaseQuery,
+            definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
+            filter_element::FilterElement,
+        },
         table::table_data_group::TableDataGroup,
     },
     infrastructure::repository::i_db_repository::IDBRepository,
 };
 
-use super::{e_action::EAction, extractor_metadata_mongo_db::ExtractorMetadataMongoDb};
+use super::{
+    e_action::EAction, e_filter_attributes::EFilterAtributtes,
+    extractor_metadata_mongo_db::ExtractorMetadataMongoDb,
+};
 
 #[derive(Clone)]
 pub struct MongoDbRepository {
@@ -130,9 +138,9 @@ impl MongoDbRepository {
                 oid.to_hex(), 
                 EJSONType::STRING,
                 Vec::from(vec![
-                    DocumentKeyAttribute::new(String::from("$oid"), String::from("true"))
-                ]
-            )),
+                    DocumentKeyAttribute::new(EFilterAtributtes::OID.to_string(), String::from("true"))
+                ])
+            ),
             Err(_) => {
                 let id = o_id.unwrap().as_str();
                 if let None = id {
@@ -344,7 +352,7 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {        
-        let json = mongo_db();
+        let json = mongo_db_collection();
 
         let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
 
@@ -442,6 +450,14 @@ impl IDBRepository for MongoDbRepository {
         }
 
         Ok(String::new())
+    }
+
+    async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException> {        
+        let json = mongo_db_filter();
+
+        let definition: FilterDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
+
+        Ok(definition)
     }
 
     async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
