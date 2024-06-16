@@ -27,6 +27,15 @@ pub mod infrastructure {
     pub mod db_service;
 }
 pub mod domain {
+    pub mod action {
+        pub mod definition {
+            pub mod action_form_collection;
+            pub mod action_definition;
+            pub mod action_form;
+            pub mod form_default;
+            pub mod form_field_definition;
+        }
+    }
     pub mod collection {
         pub mod collection_data;
         pub mod collection_definition;
@@ -69,8 +78,15 @@ pub mod domain {
         pub mod filter_element;
     }
     pub mod table {
-        pub mod table_data_field;
-        pub mod table_data_group;
+        pub mod definition {
+            pub mod table_definition;
+            pub mod table_field_definition;
+            pub mod table_row_definition;
+        }
+        pub mod group {
+            pub mod table_data_field;
+            pub mod table_data_group;
+        }
     }
     pub mod e_json_type;
     pub mod connection_data;

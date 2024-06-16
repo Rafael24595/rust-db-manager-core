@@ -1,6 +1,7 @@
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
+        action::definition::action_definition::ActionDefinition,
         collection::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
@@ -11,7 +12,9 @@ use crate::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery,
             definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
         },
-        table::table_data_group::TableDataGroup,
+        table::{
+            definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
+        },
     },
     infrastructure::repository::i_db_repository::IDBRepository,
 };
@@ -61,6 +64,14 @@ impl <T: IDBRepository> Service<T> {
 
     pub async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.collection_metadata(query).await;
+    }
+
+    pub async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
+        return self.repository.collection_information(query).await;
+    }
+
+    pub async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
+        return self.repository.collection_actions(query).await;
     }
 
     pub async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {

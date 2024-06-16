@@ -12,28 +12,21 @@ use uuid::Uuid;
 
 use crate::{
     commons::{
-        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_filter},
+        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_collection_actions, mongo_db_filter},
         exception::connect_exception::ConnectException,
     },
     domain::{
-        collection::{
+        action::definition::{action_definition::ActionDefinition, action_form::ActionForm, action_form_collection::ActionFormCollection, form_default::FormDefault, form_field_definition::FormFieldDefinition}, collection::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
-        },
-        connection_data::ConnectionData,
-        data_base::generate_database_query::GenerateDatabaseQuery,
-        document::{
+        }, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{
             document_data::DocumentData, document_key::DocumentKey,
             document_key_attribute::DocumentKeyAttribute, document_schema::DocumentSchema,
-        },
-        e_json_type::EJSONType,
-        field::generate::field_data::FieldData,
-        filter::{
+        }, e_json_type::EJSONType, field::generate::field_data::FieldData, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery,
             definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
             filter_element::FilterElement,
-        },
-        table::table_data_group::TableDataGroup,
+        }, table::{definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup}
     },
     infrastructure::repository::i_db_repository::IDBRepository,
 };
@@ -347,22 +340,41 @@ impl IDBRepository for MongoDbRepository {
             let document = self.collections_metadata_document(query.data_base(), collection).await?;
             documents.push(document);
         }
-
         ExtractorMetadataMongoDb::from_collections(documents)
     }
 
     async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {        
         let json = mongo_db_collection();
-
         let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
-
         Ok(definition)
     }
 
     async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let document = self.collections_metadata_document(query.data_base(), query.collection()).await?;
-
         ExtractorMetadataMongoDb::from_collection(document)
+    }
+
+    async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
+        let collection = self.collection(&query.data_base(), &query.collection());
+        let o_indexes = collection.list_indexes(None).await;
+        if let Err(error) = o_indexes {
+            let exception = ConnectException::new(error.to_string());
+            return Err(exception);
+        }
+
+        let indexes = ExtractorMetadataMongoDb::from_indexes(o_indexes.unwrap()).await?;
+
+        let mut collection = Vec::new();
+        collection.push(indexes);
+
+        Ok(collection)
+    }
+
+    async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
+        let collection = self.collection(&query.data_base(), &query.collection());
+        let definition = ExtractorMetadataMongoDb::collection_actions(collection).await?;
+
+        Ok(definition)
     }
 
     async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
@@ -371,7 +383,6 @@ impl IDBRepository for MongoDbRepository {
             let exception = ConnectException::new(result.unwrap_err().to_string());
             return Err(exception);
         }
-
         Ok(result.ok().unwrap())
     }
 

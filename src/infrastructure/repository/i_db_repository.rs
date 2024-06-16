@@ -3,17 +3,13 @@ use async_trait::async_trait;
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
-        collection::{
+        action::definition::action_definition::ActionDefinition, collection::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
-        },
-        data_base::generate_database_query::GenerateDatabaseQuery,
-        document::{document_data::DocumentData, document_schema::DocumentSchema},
-        filter::{
+        }, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema}, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery,
             definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
-        },
-        table::table_data_group::TableDataGroup,
+        }, table::{definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup}
     },
 };
 
@@ -30,6 +26,8 @@ pub trait IDBRepository: Clone + Send + Sync {
 
     async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException>;
     async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
+    async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException>;
+    async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException>;
     async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException>;
     async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;

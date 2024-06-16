@@ -1,10 +1,32 @@
 use std::time::Duration;
 
 use chrono::Local;
-use mongodb::bson::{Bson, Document};
+use futures_util::StreamExt;
+use mongodb::{
+    bson::{Bson, Document},
+    options::IndexVersion,
+    Collection, Cursor,
+};
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::table::table_data_group::TableDataGroup};
-
+use crate::{
+    commons::{
+        configuration::definition::mongo_db::mongo_db_collection_actions,
+        exception::connect_exception::ConnectException,
+    },
+    domain::{
+        action::definition::{
+            action_definition::ActionDefinition, action_form::ActionForm,
+            action_form_collection::ActionFormCollection, form_default::FormDefault,
+            form_field_definition::FormFieldDefinition,
+        },
+        table::{
+            definition::{
+                table_definition::TableDefinition, table_row_definition::TableRowDefinition,
+            },
+            group::table_data_group::TableDataGroup,
+        },
+    },
+};
 pub(crate) struct ExtractorMetadataMongoDb {
 }
 
@@ -252,4 +274,132 @@ impl ExtractorMetadataMongoDb {
         Ok(group)
     }
 
+    pub(crate) async fn from_indexes(mut indexes: Cursor<mongodb::IndexModel>) -> Result<TableDefinition, ConnectException> {
+        let mut table = TableDefinition::new(String::from("Indexes"));
+
+        let mut titles = TableRowDefinition::new();
+        titles.push_title(String::from("Name"));
+        titles.push_title(String::from("Columns"));
+        titles.push_title(String::from("Version"));
+
+        let mut rows = Vec::new();
+        while let Some(o_index) = indexes.next().await {
+            if let Err(error) = o_index {
+                let exception = ConnectException::new(error.to_string());
+                return Err(exception);
+            }
+
+            let index = o_index.unwrap();
+
+            
+            println!("{:?}", index);
+
+            let mut keys = Vec::new();
+            for key in index.keys.keys() {
+                let value = index.keys.get_i32(key);
+                if let Err(error) = value {
+                    let exception = ConnectException::new(error.to_string());
+                    return Err(exception);
+                }
+
+                let mut direction = String::from("DSC");
+                if value.unwrap() > 0 {
+                    direction = String::from("ASC");
+                }
+
+                keys.push(format!("{} - {}", key, direction));
+            }
+
+            
+            if index.options.is_none() {
+                continue;
+            }
+            
+            let options = index.options.unwrap();
+
+            let mut row = TableRowDefinition::new();
+
+            row.push(options.name.unwrap_or(String::new()));
+            row.push(keys.join(", "));
+            row.push(index_version_to_string(options.version.unwrap_or(IndexVersion::V0)));
+
+            println!("{:?}", options.bits);
+
+            rows.push(row);
+        }
+
+        if rows.len() > 0 {
+            table.push(titles);
+            rows.iter().for_each(|r| {
+                table.push(r.clone());
+            });
+        }
+
+        Ok(table)
+    }
+
+    pub(crate) async fn collection_actions(collection: Collection<Document>) -> Result<Vec<ActionDefinition>, ConnectException> {
+        let json = mongo_db_collection_actions();
+        let mut definition: Vec<ActionDefinition> = serde_json::from_str(&json).expect("Failed to parse JSON");
+    
+        definition.push(Self::delete_indexes_action(collection).await?);
+    
+        Ok(definition)
+    }
+    
+    async fn delete_indexes_action(collection: Collection<Document>) -> Result<ActionDefinition, ConnectException> {
+        let o_indexes = collection.list_indexes(None).await;
+        if let Err(error) = o_indexes {
+            let exception = ConnectException::new(error.to_string());
+            return Err(exception);
+        }
+    
+        let mut indexes = o_indexes.unwrap();
+    
+        let mut keys = Vec::new();
+        while let Some(o_index) = indexes.next().await {
+            if let Err(error) = o_index {
+                let exception = ConnectException::new(error.to_string());
+                return Err(exception);
+            }
+    
+            let index = o_index.unwrap();
+    
+            if index.options.is_none() {
+                continue;
+            }
+    
+            if let Some(name) = index.options.unwrap().name {
+                keys.push(FormDefault::new(name.clone(), name));
+            }
+        }
+    
+        let field = FormFieldDefinition::new(
+            1, String::from("INDEXED"), String::from("Indexed"), true, keys
+        );
+    
+        let mut form = ActionForm::new(None, false);
+        form.push(field);
+    
+        let mut forms = ActionFormCollection::new(false);
+        forms.push(form);
+    
+        Ok(ActionDefinition::new(
+            String::from("INDEXES_DELETE"),
+            String::from("Delete indexes"),
+            None,
+            Some(forms)
+        ))
+    }
+    
+}
+
+pub(crate) fn index_version_to_string(version: IndexVersion) -> String {
+    match version {
+        IndexVersion::V0 => String::from("0"),
+        IndexVersion::V1 => String::from("1"),
+        IndexVersion::V2 => String::from("2"),
+        IndexVersion::Custom(_) => String::from("Custom"),
+        _ => String::from("Undefined"),
+    }
 }

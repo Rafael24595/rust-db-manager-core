@@ -117,3 +117,75 @@ pub fn mongo_db_filter() -> String {
         }
     ).to_string()
 }
+
+pub fn mongo_db_collection_actions() -> String {
+    json!(
+        [
+            {
+                "action": "INDEXES_NEW",
+                "title": "New indexes",
+                "form": {
+                    "sw_query": true,
+                    "forms":  [
+                        {
+                            "sw_vector": true,
+                            "fields": [
+                                {
+                                    "order": 1,
+                                    "code": "FIELD",
+                                    "name": "Field",
+                                    "sw_vector": false,
+                                    "values": []
+                                },
+                                {
+                                    "order": 2,
+                                    "code": "DIRECTION",
+                                    "name": "Direction",
+                                    "sw_vector": false,
+                                    "values": [
+                                        {
+                                            "key": "ASC",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "DESC",
+                                            "value": "-1"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "sw_vector": false,
+                            "fields": [
+                                {
+                                    "order": 1,
+                                    "code": "NAME",
+                                    "name": "Name",
+                                    "sw_vector": false,
+                                    "values": []
+                                },
+                                {
+                                    "order": 2,
+                                    "code": "UNIQUE",
+                                    "name": "Unique",
+                                    "sw_vector": false,
+                                    "values": [
+                                        {
+                                            "key": "True",
+                                            "value": "true"
+                                        },
+                                        {
+                                            "key": "False",
+                                            "value": "false"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    ).to_string()
+}
