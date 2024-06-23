@@ -27,6 +27,8 @@ use crate::{
         },
     },
 };
+
+use super::mongo_db_actions::ACTION_INDEXES_DELETE;
 pub(crate) struct ExtractorMetadataMongoDb {
 }
 
@@ -378,14 +380,14 @@ impl ExtractorMetadataMongoDb {
             1, String::from("INDEXED"), String::from("Indexed"), true, keys
         );
     
-        let mut form = ActionForm::new(None, false);
+        let mut form = ActionForm::new(String::from("INDEXED"), None, false);
         form.push(field);
     
         let mut forms = ActionFormCollection::new(false);
         forms.push(form);
     
         Ok(ActionDefinition::new(
-            String::from("INDEXES_DELETE"),
+            String::from(ACTION_INDEXES_DELETE),
             String::from("Delete indexes"),
             None,
             Some(forms)

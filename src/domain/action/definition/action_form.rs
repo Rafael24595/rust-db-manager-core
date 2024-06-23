@@ -4,6 +4,7 @@ use super::form_field_definition::FormFieldDefinition;
 
 #[derive(Clone, Deserialize)]
 pub struct ActionForm {
+    code: String,
     title: Option<String>,
     sw_vector: bool,
     fields: Vec<FormFieldDefinition>
@@ -11,12 +12,17 @@ pub struct ActionForm {
 
 impl ActionForm {
     
-    pub fn new(title: Option<String>, sw_vector: bool) -> Self {
+    pub fn new(code: String, title: Option<String>, sw_vector: bool) -> Self {
         Self {
+            code: code,
             title: title,
             sw_vector: sw_vector,
             fields: Vec::new()
         }
+    }
+
+    pub fn code(&self) -> String {
+        self.code.clone()
     }
 
     pub fn title(&self) -> Option<String> {

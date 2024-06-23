@@ -16,6 +16,7 @@ pub mod infrastructure {
             pub mod e_action;
             pub mod e_filter_attributes;
             pub mod extractor_metadata_mongo_db;
+            pub mod mongo_db_actions;
             pub mod mongo_db_repository;
             pub mod mongo_utils;
         }
@@ -34,6 +35,11 @@ pub mod domain {
             pub mod action_form;
             pub mod form_default;
             pub mod form_field_definition;
+        }
+        pub mod generate {
+            pub mod action_form;
+            pub mod action;
+            pub mod form_field;
         }
     }
     pub mod collection {

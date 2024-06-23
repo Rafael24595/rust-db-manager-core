@@ -12,11 +12,11 @@ use uuid::Uuid;
 
 use crate::{
     commons::{
-        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_collection_actions, mongo_db_filter},
+        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_filter},
         exception::connect_exception::ConnectException,
     },
     domain::{
-        action::definition::{action_definition::ActionDefinition, action_form::ActionForm, action_form_collection::ActionFormCollection, form_default::FormDefault, form_field_definition::FormFieldDefinition}, collection::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
         }, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{
@@ -33,7 +33,7 @@ use crate::{
 
 use super::{
     e_action::EAction, e_filter_attributes::EFilterAtributtes,
-    extractor_metadata_mongo_db::ExtractorMetadataMongoDb,
+    extractor_metadata_mongo_db::ExtractorMetadataMongoDb, mongo_db_actions::execute_collection_action,
 };
 
 #[derive(Clone)]
@@ -375,6 +375,11 @@ impl IDBRepository for MongoDbRepository {
         let definition = ExtractorMetadataMongoDb::collection_actions(collection).await?;
 
         Ok(definition)
+    }
+
+    async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException> {
+        let collection = self.collection(&query.data_base(), &query.collection());
+        execute_collection_action(collection, action).await
     }
 
     async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {

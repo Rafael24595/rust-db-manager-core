@@ -128,6 +128,7 @@ pub fn mongo_db_collection_actions() -> String {
                     "sw_query": true,
                     "forms":  [
                         {
+                            "code": "FIELDS",
                             "sw_vector": true,
                             "fields": [
                                 {
@@ -156,6 +157,7 @@ pub fn mongo_db_collection_actions() -> String {
                             ]
                         },
                         {
+                            "code": "ATTRIBUTES",
                             "sw_vector": false,
                             "fields": [
                                 {

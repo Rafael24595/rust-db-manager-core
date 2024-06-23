@@ -1,7 +1,7 @@
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
-        action::definition::action_definition::ActionDefinition,
+        action::{definition::action_definition::ActionDefinition, generate::action::Action},
         collection::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
@@ -72,6 +72,10 @@ impl <T: IDBRepository> Service<T> {
 
     pub async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
         return self.repository.collection_actions(query).await;
+    }
+
+    pub async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException> {
+        return self.repository.collection_execute_action(query, action).await;
     }
 
     pub async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {

@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
-        action::definition::action_definition::ActionDefinition, collection::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
         }, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema}, filter::{
@@ -28,6 +28,7 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
     async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException>;
     async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException>;
+    async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException>;
     async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException>;
     async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;

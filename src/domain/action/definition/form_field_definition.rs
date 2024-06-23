@@ -23,9 +23,9 @@ impl FormFieldDefinition {
         self.order
     }
     
-        pub fn code(&self) -> String {
-            self.code.clone()
-        }
+    pub fn code(&self) -> String {
+        self.code.clone()
+    }
 
     pub fn name(&self) -> String {
         self.name.clone()
