@@ -135,7 +135,7 @@ pub fn mongo_db_collection_actions() -> String {
                                     "order": 1,
                                     "code": "FIELD",
                                     "name": "Field",
-                                    "sw_vector": false,
+                                    "sw_key": true,
                                     "values": []
                                 },
                                 {

@@ -7,15 +7,15 @@ pub struct FormFieldDefinition {
     order: usize,
     code: String,
     name: String,
-    sw_vector: bool,
+    sw_key: bool,
     values: Vec<FormDefault>,
 }
 
 impl FormFieldDefinition {
     
-    pub fn new(order: usize, code: String, name: String, sw_vector: bool, values: Vec<FormDefault>) -> Self {
+    pub fn new(order: usize, code: String, name: String, sw_key: bool, values: Vec<FormDefault>) -> Self {
         Self {
-            order, code, name, sw_vector, values
+            order, code, name, sw_key, values
         }
     }
 
@@ -31,8 +31,8 @@ impl FormFieldDefinition {
         self.name.clone()
     }
 
-    pub fn is_vector(&self) -> bool {
-        self.sw_vector
+    pub fn is_key(&self) -> bool {
+        self.sw_key
     }
 
     pub fn values(&self) -> Vec<FormDefault> {

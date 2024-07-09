@@ -377,6 +377,13 @@ impl IDBRepository for MongoDbRepository {
         Ok(definition)
     }
 
+    async fn collection_action(&self, query: &CollectionQuery, code: &String) -> Result<Option<ActionDefinition>, ConnectException> {
+        let collection = self.collection(&query.data_base(), &query.collection());
+        let definition = ExtractorMetadataMongoDb::collection_actions(collection).await?;
+
+        Ok(definition.iter().find(|d| d.action() == *code).cloned())
+    }
+
     async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException> {
         let collection = self.collection(&query.data_base(), &query.collection());
         execute_collection_action(collection, action).await

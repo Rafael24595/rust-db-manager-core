@@ -380,7 +380,7 @@ impl ExtractorMetadataMongoDb {
             1, String::from("INDEXED"), String::from("Indexed"), true, keys
         );
     
-        let mut form = ActionForm::new(String::from("INDEXED"), None, false);
+        let mut form = ActionForm::new(String::from("INDEXED"), None, true);
         form.push(field);
     
         let mut forms = ActionFormCollection::new(false);

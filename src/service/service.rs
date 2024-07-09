@@ -74,6 +74,10 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_actions(query).await;
     }
 
+    pub async fn collection_action(&self, query: &CollectionQuery, code: &String) -> Result<Option<ActionDefinition>, ConnectException> {
+        return self.repository.collection_action(query, code).await;
+    }
+
     pub async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException> {
         return self.repository.collection_execute_action(query, action).await;
     }

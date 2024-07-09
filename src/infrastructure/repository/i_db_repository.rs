@@ -28,6 +28,7 @@ pub trait IDBRepository: Clone + Send + Sync {
     async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
     async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException>;
     async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException>;
+    async fn collection_action(&self, query: &CollectionQuery, code: &String) -> Result<Option<ActionDefinition>, ConnectException>;
     async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException>;
     async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException>;
