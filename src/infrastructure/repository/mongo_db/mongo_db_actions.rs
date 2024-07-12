@@ -53,20 +53,15 @@ async fn create_indexes_keys(action: &Action) -> Result<Document, ConnectExcepti
         }
 
         let field = o_field.unwrap().value();
-        let field = field.first();
-        if field.is_none() {
-            continue;
-        }
 
         let mut direction = 1;
         if let Some(result) = o_direction {
-            direction = result.value().first().cloned()
-                .unwrap_or(String::new())
+            direction = result.value()
                 .parse::<i32>()
                 .unwrap_or(1);
         }
 
-        keys.insert(field.unwrap(), Bson::Int32(direction));
+        keys.insert(field, Bson::Int32(direction));
     }
 
     Ok(keys)
@@ -75,21 +70,19 @@ async fn create_indexes_keys(action: &Action) -> Result<Document, ConnectExcepti
 async fn create_indexes_options(action: &Action) -> Result<IndexOptions, ConnectException> {
     let o_form_attributes = action.find_form(String::from(FORM_ATTRIBUTES));
     if o_form_attributes.is_none() {
-        return Err(ConnectException::new(String::from("Form data not found.")));
+        return Ok(IndexOptions::builder().build());
     }
 
     let form_attributes = o_form_attributes.unwrap();
 
     let mut name = None;
     if let Some(values) = form_attributes.find_fields(String::from(FIELD_NAME)).first() {
-        name = values.value().first().cloned();
+        name = Some(values.value());
     }
 
     let mut unique = true;
     if let Some(values) = form_attributes.find_fields(String::from(FIELD_UNIQUE)).first() {
-        if let Some(value) = values.value().first() {
-            unique = value.parse::<bool>().unwrap_or(true);
-        }
+        unique = values.value().parse::<bool>().unwrap_or(true);
     }
 
     Ok(IndexOptions::builder()
@@ -108,15 +101,10 @@ async fn delete_indexes(collection: Collection<Document>, action: &Action) -> Re
 
     let mut errors = Vec::new();
     for index in indexes {
-        let values = index.value();
-        let o_value = values.first();
-        if o_value.is_none() {
-            continue;
-        }
+        let value = index.value();
 
-        let value = o_value.unwrap();
-        if let Err(error) = collection.drop_index(value, None).await {
-            errors.push(value.clone() + ": " + &error.to_string());
+        if let Err(error) = collection.drop_index(value.clone(), None).await {
+            errors.push(value + ": " + &error.to_string());
         }
     }
 

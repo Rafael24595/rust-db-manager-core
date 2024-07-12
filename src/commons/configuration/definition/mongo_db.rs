@@ -142,7 +142,7 @@ pub fn mongo_db_collection_actions() -> String {
                                     "order": 2,
                                     "code": "DIRECTION",
                                     "name": "Direction",
-                                    "sw_vector": false,
+                                    "sw_key": false,
                                     "values": [
                                         {
                                             "key": "ASC",
@@ -164,14 +164,14 @@ pub fn mongo_db_collection_actions() -> String {
                                     "order": 1,
                                     "code": "NAME",
                                     "name": "Name",
-                                    "sw_vector": false,
+                                    "sw_key": false,
                                     "values": []
                                 },
                                 {
                                     "order": 2,
                                     "code": "UNIQUE",
                                     "name": "Unique",
-                                    "sw_vector": false,
+                                    "sw_key": false,
                                     "values": [
                                         {
                                             "key": "True",

@@ -1,12 +1,12 @@
 #[derive(Clone)]
 pub struct FormField {
     code: String,
-    value: Vec<String>,
+    value: String,
 }
 
 impl FormField {
     
-    pub fn new(code: String, value: Vec<String>) -> Self {
+    pub fn new(code: String, value: String) -> Self {
         Self {
             code, value
         }
@@ -16,7 +16,7 @@ impl FormField {
         self.code.clone()
     }
 
-    pub fn value(&self) -> Vec<String> {
+    pub fn value(&self) -> String {
         self.value.clone()
     }
 
