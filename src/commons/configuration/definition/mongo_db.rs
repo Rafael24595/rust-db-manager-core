@@ -110,6 +110,7 @@ pub fn mongo_db_filter() -> String {
                         }
                     ],
                     "applies": [
+                        "ID_STRING",
                         "STRING"
                     ]
                 },
