@@ -142,7 +142,7 @@ pub fn mongo_db_collection_actions() -> String {
                                     "order": 2,
                                     "code": "DIRECTION",
                                     "name": "Direction",
-                                    "sw_key": false,
+                                    "sw_key": true,
                                     "values": [
                                         {
                                             "key": "ASC",
