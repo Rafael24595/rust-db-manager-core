@@ -15,9 +15,15 @@ jobs:
     - name: Create and push new branch
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH_NAME: new-branch-name # Change this to your desired branch name
       run: |
+        # Extract project version from Cargo.toml
+        PROJECT_VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+        echo "Version extracted: $awsome_variable"
+        
+        # Configure Git
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git checkout -b $BRANCH_NAME
-        git push origin $BRANCH_NAME
+        
+        # Create and push new branch
+        git checkout -b "$PROJECT_VERSION"
+        git push origin "$PROJECT_VERSION"
