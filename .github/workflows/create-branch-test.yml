@@ -14,7 +14,7 @@ jobs:
 
     - name: Create and push new branch
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }}
       run: |
         # Extract project version from Cargo.toml
         PROJECT_VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
