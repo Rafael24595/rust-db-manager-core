@@ -1,0 +1,23 @@
+name: Create New Branch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create_branch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Create and push new branch
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH_NAME: new-branch-name # Change this to your desired branch name
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git checkout -b $BRANCH_NAME
+        git push origin $BRANCH_NAME
