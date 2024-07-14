@@ -293,9 +293,6 @@ impl ExtractorMetadataMongoDb {
 
             let index = o_index.unwrap();
 
-            
-            println!("{:?}", index);
-
             let mut keys = Vec::new();
             for key in index.keys.keys() {
                 let value = index.keys.get_i32(key);
@@ -324,8 +321,6 @@ impl ExtractorMetadataMongoDb {
             row.push(options.name.unwrap_or(String::new()));
             row.push(keys.join(", "));
             row.push(index_version_to_string(options.version.unwrap_or(IndexVersion::V0)));
-
-            println!("{:?}", options.bits);
 
             rows.push(row);
         }
