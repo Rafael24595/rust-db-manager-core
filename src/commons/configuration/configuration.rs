@@ -1,10 +1,19 @@
-use std::{collections::HashMap, process::Command, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    collections::HashMap, env, fs::{self, File}, io::{Read, Write}, process::Command, sync::Mutex, time::{SystemTime, UNIX_EPOCH}
+};
 
 use cargo_metadata::{CargoOpt, MetadataCommand};
 use lazy_static::lazy_static;
 use uuid::Uuid;
 
-use crate::{commons::exception::connect_exception::ConnectException, infrastructure::{db_service::DBService, db_service_lite::DBServiceLite}};
+use crate::{
+    commons::exception::configuration_exception::ConfigurationException,
+    infrastructure::{db_service::DBService, db_service_lite::DBServiceLite},
+};
+
+const ENV_KEEP_SERVICES: &str = "KEEP_SERVICES";
+const CACHE_DIRECTORY: &str = "./.cache";
+const CACHE_FILE: &str = "services.json";
 
 lazy_static! {
     static ref INSTANCE: Mutex<Option<Configuration>> = Mutex::new(None);
@@ -18,20 +27,23 @@ pub struct Configuration {
     app_version: String,
     session_id: String,
     timestamp: u128,
+    keep_services: bool,
     services: HashMap<String, DBService>
 }
 
 impl Configuration {
     
-    pub fn initialize() -> Configuration {
+    pub fn initialize() -> Result<Configuration, ConfigurationException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         if instance.is_some() {
             //TODO: Log.
-            panic!("Configuration is already initialized.");
+            return Err(ConfigurationException::new("Configuration is already initialized."));
         }
 
-        let rustc_version = Configuration::command_rustc_version();
-        let cargo_version = Configuration::command_cargo_version();
+        let envs = Self::os_env_args();
+
+        let rustc_version = Configuration::command_rustc_version()?;
+        let cargo_version = Configuration::command_cargo_version()?;
 
         let metadata = MetadataCommand::new()
             .features(CargoOpt::AllFeatures)
@@ -49,134 +61,224 @@ impl Configuration {
             .duration_since(UNIX_EPOCH)
             .expect("Cannot read actual date.")
             .as_millis();
-        let services = HashMap::new();
+
+        let keep_services = envs.get(ENV_KEEP_SERVICES)
+            .unwrap_or(&String::new())
+            .parse::<bool>()
+            .unwrap_or(false);
+
+        let services = match keep_services {
+            true => Self::read_cached(),
+            false => HashMap::new(),
+        };
 
         let config = Configuration {
-            rustc_version, cargo_version, app_name, app_version, session_id, timestamp, services
+            rustc_version, cargo_version, app_name, app_version, session_id, timestamp, keep_services, services
         };
 
         *instance = Some(config);
         
-        return instance.as_ref().unwrap().clone();
+        Ok(instance.as_ref().unwrap().clone())
     }
 
-    fn command_cargo_version() -> String {
+    fn command_cargo_version() -> Result<String, ConfigurationException> {
         Configuration::command_lang_version("cargo")
     }
 
-    fn command_rustc_version() -> String {
+    fn command_rustc_version() -> Result<String, ConfigurationException> {
         Configuration::command_lang_version("rustc")
     }
 
-    fn command_lang_version(resource: &str) -> String {
-        let output = Command::new(resource)
+    fn command_lang_version(resource: &str) -> Result<String, ConfigurationException> {
+        let result = Command::new(resource)
             .arg("--version")
-            .output()
-            .expect("Failed to execute command");
+            .output();
+        if let Err(err) = result {
+            return Err(ConfigurationException::new(&format!("Failed to execute command: {}", err.to_string())));
+        }
+
+        let output = result.unwrap();
+
         if output.status.success() {
-            return String::from_utf8_lossy(&output.stdout).to_string();
+            return Ok(String::from_utf8_lossy(&output.stdout).to_string());
         } else {
             //TODO: Log.
-            panic!("Failed to get {} version", resource);
+            return Err(ConfigurationException::new(&format!("Failed to get {} version", resource)));
         }
     }
 
-    fn instance() -> Configuration {
+    fn instance() -> Result<Configuration, ConfigurationException> {
         let instance = INSTANCE.lock().expect("Could not lock mutex");
         if instance.is_none() {
             //TODO: Log.
-            panic!("Configuration is not initialized.");
+            return Err(ConfigurationException::new("Configuration is not initialized."))
         }
         
-        return instance.as_ref().unwrap().clone();
+        Ok(instance.as_ref().unwrap().clone())
     }
 
-    pub fn rustc_version() -> String {
-        Configuration::instance().rustc_version
+    pub fn rustc_version() -> Result<String, ConfigurationException> {
+        Ok(Configuration::instance()?.rustc_version)
     }
 
-    pub fn cargo_version() -> String {
-        Configuration::instance().cargo_version
+    pub fn cargo_version() -> Result<String, ConfigurationException> {
+        Ok(Configuration::instance()?.cargo_version)
     }
 
-    pub fn name() -> String {
-        Configuration::instance().app_name
+    pub fn name() -> Result<String, ConfigurationException> {
+        Ok(Configuration::instance()?.app_name)
     }
 
-    pub fn version() -> String {
-        Configuration::instance().app_version
+    pub fn version() -> Result<String, ConfigurationException> {
+        Ok(Configuration::instance()?.app_version)
     }
 
-    pub fn session_id() -> String {
-        Configuration::instance().session_id
+    pub fn session_id() -> Result<String, ConfigurationException> {
+        Ok(Configuration::instance()?.session_id)
     }
 
-    pub fn timestamp() -> u128 {
-        Configuration::instance().timestamp
+    pub fn timestamp() -> Result<u128, ConfigurationException> {
+        Ok(Configuration::instance()?.timestamp)
     }
 
-    pub fn find_services() -> Vec<DBServiceLite> {
+    pub fn find_services() -> Result<Vec<DBServiceLite>, ConfigurationException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
             Some(config) => config,
-            None => panic!("Configuration is not initialized."),
+            None => return Err(ConfigurationException::new("Configuration is not initialized.")),
         };
         
-        config.services.iter().map(|s| DBServiceLite::new(s.1.name(), s.1.category())).collect()
+        Ok(config.services.iter().map(|s| DBServiceLite::new(s.1.name(), s.1.category())).collect())
     }
 
-    pub fn find_service(key: &str) -> Option<DBService> {
+    pub fn find_service(key: &str) -> Result<Option<DBService>, ConfigurationException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
             Some(config) => config,
-            None => panic!("Configuration is not initialized."),
+            None => return Err(ConfigurationException::new("Configuration is not initialized.")),
         };
         
-        config.services.get(key).cloned()
+        Ok(config.services.get(key).cloned())
     }
 
-    pub fn push_service(service: &DBService) -> Result<&DBService, ConnectException> {
+    pub fn push_service(service: &DBService) -> Result<&DBService, ConfigurationException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
             Some(config) => config,
-            None => panic!("Configuration is not initialized."),
+            None => return Err(ConfigurationException::new("Configuration is not initialized.")),
         };
 
         if config.services.contains_key(&service.name()) {
-            let exception = ConnectException::new(String::from("Service already exists."));
+            let exception = ConfigurationException::new("Service already exists.");
             return Err(exception);
         }
         
         config.services.insert(service.name(), service.clone());
+        Self::write_cached(config)?;
         
-        return Ok(service);
+        Ok(service)
     }
 
-    pub fn put_service(service: DBService) -> DBService {
+    pub fn put_service(service: DBService) -> Result<Option<DBService>, ConfigurationException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
             Some(config) => config,
-            None => panic!("Configuration is not initialized."),
+            None => return Err(ConfigurationException::new("Configuration is not initialized.")),
         };
-        
+
+        let aux = config.services.get(&service.name()).cloned();
+
         config.services.insert(service.name(), service.clone());
+        Self::write_cached(config)?;
         
-        return service;
+        Ok(aux)
     }
 
-    pub fn remove_service(service: DBService) -> Option<DBService> {
+    pub fn remove_service(service: DBService) -> Result<Option<DBService>, ConfigurationException> {
         let mut instance = INSTANCE.lock().expect("Could not lock mutex");
         
         let config = match instance.as_mut() {
             Some(config) => config,
-            None => panic!("Configuration is not initialized."),
+            None => return Err(ConfigurationException::new("Configuration is not initialized.")),
         };
         
-        return config.services.remove(&service.name());
+        let result = config.services.remove(&service.name());
+        Self::write_cached(config)?;
+
+        Ok(result)
+    }
+
+    fn read_cached() -> HashMap<String, DBService> {
+        let path = format!("{}/{}", CACHE_DIRECTORY, CACHE_FILE);
+        let file = File::open(path);
+        if file.is_err() {
+            return HashMap::new();
+        }
+
+        let mut json = String::new();
+        let result = file.unwrap().read_to_string(&mut json);
+        if result.is_err() {
+            return HashMap::new();
+        }
+
+        let deserialized: Result<Vec<DBService>, serde_json::Error> = serde_json::from_str(&json);
+        if deserialized.is_err() {
+            return HashMap::new();
+        }
+        
+        let mut services = HashMap::new();
+        for service in deserialized.unwrap() {
+            services.insert(service.name(), service);
+        }
+
+        return services;
+    }
+
+    fn write_cached(configuration: &Configuration) -> Result<(), ConfigurationException> {
+        if !configuration.keep_services {
+            return Ok(());
+        }
+        
+        Self::check_cache_directory()?;
+        
+        let path = format!("{}/{}", CACHE_DIRECTORY, CACHE_FILE);
+        let file = File::create(path);
+        if let Err(err) = file {
+            return Err(ConfigurationException::new(&err.to_string()));
+        }
+
+        let values: Vec<&DBService> = configuration.services.values().collect();
+        let serialized = serde_json::to_string_pretty(&values);
+        if let Err(err) = serialized {
+            return Err(ConfigurationException::new(&err.to_string()));
+        }
+
+        if let Err(err) = file.unwrap().write_all(serialized.unwrap().as_bytes()) {
+            return Err(ConfigurationException::new(&err.to_string()));
+        }
+
+        return Ok(());
+    }
+
+    fn check_cache_directory() -> Result<(), ConfigurationException> {
+        match fs::create_dir_all(CACHE_DIRECTORY) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(ConfigurationException::new(&err.to_string())),
+        }
+    }
+
+    pub fn os_env_args() -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        for (key, val) in env::vars_os() {
+            if let (Ok(k), Ok(v)) = (key.into_string(), val.into_string()) {
+                map.insert(k, v);
+            }
+        }
+        return map;
     }
 
 }

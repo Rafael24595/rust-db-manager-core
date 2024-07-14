@@ -5,6 +5,7 @@ use argon2::{
     },
     Argon2
 };
+use serde::{Deserialize, Serialize};
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -12,7 +13,7 @@ use crate::{commons::exception::connect_exception::ConnectException, domain::con
 
 use super::repository::e_db_repository::EDBRepository;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct DBService {
     name: String,
     owner: String,

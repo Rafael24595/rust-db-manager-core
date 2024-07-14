@@ -6,6 +6,7 @@ pub mod commons {
         pub mod configuration;
     }
     pub mod exception {
+        pub mod configuration_exception;
         pub mod connect_exception;
     }
     pub mod utils;
