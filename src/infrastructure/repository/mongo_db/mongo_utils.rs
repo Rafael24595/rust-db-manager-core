@@ -101,9 +101,15 @@ impl FilterElement {
     }
 
     fn make_query(&self, mut registry: QueryItems, value: Bson) -> QueryItems {
-        let document = value.as_document();
+        let array = value.as_array();
         //TODO: Error
-        registry.queries.push(document.cloned().unwrap());
+        let mut documents = Vec::new();
+        for bson in array.unwrap() {
+            let document = bson.as_document();
+            //TODO: Error
+            documents.push(document.cloned().unwrap());
+        }
+        registry.queries.append(&mut documents);
         return registry;    
     }
 
@@ -179,9 +185,10 @@ impl FilterValue {
 
     pub fn query_as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
         let value = self.value();
-        let pipeline: Result<Document, serde_json::Error> = from_str(&value);
+        let pipeline: Result<Vec<Document>, serde_json::Error> = from_str(&value);
         //TODO: Error
-        (Bson::Document(pipeline.unwrap()), registry, field.to_owned())
+        let array = pipeline.unwrap().iter().map(|d| Bson::Document(d.clone())).collect();
+        (Bson::Array(array), registry, field.to_owned())
     }
 
     pub fn string_as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
