@@ -72,6 +72,8 @@ pub fn mongo_db_collection() -> String {
 pub fn mongo_db_filter() -> String {
     json!(
         {
+            "query_type": "JSON",
+            "query_example": "[{\"$addFields\":{\"_id_str\":{\"$toString\":\"$_id\"}}},{\"$match\":{\"_id_str\":{\"$regex\":\"0001\"}}},{\"$project\":{\"_id_str\":0}}]",
             "attributes": [
                 {
                     "code": "OID",
