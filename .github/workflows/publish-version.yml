@@ -16,7 +16,6 @@ jobs:
       run: cargo test --verbose
       
   create_branch:
-    ##needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -36,5 +35,5 @@ jobs:
         
         # Create and push new branch
         git checkout -b "$PROJECT_VERSION"
-        git remote set-url origin https://x-access-token:${{ GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git remote set-url origin https://x-access-token:${{ secrets.RUSTDB_TOKEN }}@github.com/${{ github.repository }}.git
         git push origin "$PROJECT_VERSION"
