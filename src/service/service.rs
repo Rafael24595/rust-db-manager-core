@@ -1,13 +1,20 @@
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action},
         collection::{
-            collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery
+            collection_data::CollectionData, collection_definition::CollectionDefinition,
+            generate_collection_query::GenerateCollectionQuery,
         },
         data_base::generate_database_query::GenerateDatabaseQuery,
         document::{document_data::DocumentData, document_schema::DocumentSchema},
-        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery, document_query::DocumentQuery},
-        table::table_data_group::TableDataGroup,
+        filter::{
+            collection_query::CollectionQuery, data_base_query::DataBaseQuery,
+            definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
+        },
+        table::{
+            definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
+        },
     },
     infrastructure::repository::i_db_repository::IDBRepository,
 };
@@ -59,6 +66,22 @@ impl <T: IDBRepository> Service<T> {
         return self.repository.collection_metadata(query).await;
     }
 
+    pub async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
+        return self.repository.collection_information(query).await;
+    }
+
+    pub async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
+        return self.repository.collection_actions(query).await;
+    }
+
+    pub async fn collection_action(&self, query: &CollectionQuery, code: &String) -> Result<Option<ActionDefinition>, ConnectException> {
+        return self.repository.collection_action(query, code).await;
+    }
+
+    pub async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException> {
+        return self.repository.collection_execute_action(query, action).await;
+    }
+
     pub async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {
         return self.repository.collection_exists(query).await;
     }
@@ -85,6 +108,10 @@ impl <T: IDBRepository> Service<T> {
 
     pub async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.collection_find_all(query).await;
+    }
+
+    pub async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException> {
+        return self.repository.filter_schema().await;
     }
 
     pub async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {

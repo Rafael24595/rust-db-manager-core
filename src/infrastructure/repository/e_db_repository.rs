@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Debug, Clone, EnumIter)]
+#[derive(Debug, Clone, EnumIter, Deserialize, Serialize)]
 pub enum EDBRepository {
     MongoDB
 }

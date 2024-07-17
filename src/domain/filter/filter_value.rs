@@ -21,11 +21,11 @@ impl FilterValue {
     }
 
     pub fn id_string(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::IDSTRING, value, attributes);
+        return FilterValue::from_value(EFilterCategory::ID_STRING, value, attributes);
     }
 
     pub fn id_numeric(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
-        return FilterValue::from_value(EFilterCategory::IDNUMERIC, value, attributes);
+        return FilterValue::from_value(EFilterCategory::ID_NUMERIC, value, attributes);
     }
 
     pub fn string(value: String, attributes: Vec<FilterValueAttribute>) -> FilterValue {
@@ -56,7 +56,7 @@ impl FilterValue {
         return FilterValue::from_value(EFilterCategory::NUMERIC, value.to_string(), attributes);
     }
 
-    pub fn filter(value: FilterElement, attributes: Vec<FilterValueAttribute>) -> FilterValue {
+    pub fn filter(value: FilterElement) -> FilterValue {
         return FilterValue::collection(Vec::from(vec![value]));
     }
 
@@ -72,7 +72,7 @@ impl FilterValue {
         return FilterValue::from(category, value, attributes, Vec::new());
     }
 
-    fn from(category: EFilterCategory, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
+    pub fn from(category: EFilterCategory, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
         return FilterValue {
             category,
             value,

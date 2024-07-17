@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use crate::infrastructure::repository::e_db_repository::EDBRepository;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConnectionData {
     category: EDBRepository,
     connection: String
