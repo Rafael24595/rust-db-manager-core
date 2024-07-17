@@ -1,4 +1,4 @@
-name: Create New Branch
+name: Publish Version
 
 on:
   push:
@@ -16,6 +16,7 @@ jobs:
       run: cargo test --verbose
       
   create_branch:
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -23,11 +24,11 @@ jobs:
 
     - name: Create and push new branch
       env:
-        GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.RUSTDB_TOKEN }}
       run: |
         # Extract project version from Cargo.toml
         PROJECT_VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
-        echo "Version extracted: $awsome_variable"
+        echo "Version extracted: $PROJECT_VERSION"
         
         # Configure Git
         git config --global user.name 'github-actions[bot]'
@@ -35,4 +36,5 @@ jobs:
         
         # Create and push new branch
         git checkout -b "$PROJECT_VERSION"
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         git push origin "$PROJECT_VERSION"
