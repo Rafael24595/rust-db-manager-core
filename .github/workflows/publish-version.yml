@@ -35,5 +35,5 @@ jobs:
         
         # Create and push new branch
         git checkout -b "$PROJECT_VERSION"
-        git remote set-url origin https://x-access-token:${{ GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git remote set-url origin https://x-access-token:"$GITHUB_TOKEN"@github.com/${{ github.repository }}.git
         git push origin "$PROJECT_VERSION"
