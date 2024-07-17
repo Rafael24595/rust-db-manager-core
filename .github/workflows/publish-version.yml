@@ -36,5 +36,5 @@ jobs:
         
         # Create and push new branch
         git checkout -b "$PROJECT_VERSION"
-        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git remote set-url origin https://{{ secrets.GITHUB_TOKEN }}@github.com/Rafael24595/rust-db-manager-core.git
         git push origin "$PROJECT_VERSION"
