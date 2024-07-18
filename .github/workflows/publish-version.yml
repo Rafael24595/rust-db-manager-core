@@ -33,6 +33,11 @@ jobs:
         # Configure Git
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+        if git ls-remote --exit-code --heads https://@github.com/${{ github.repository }}.git "$PROJECT_VERSION"; then
+          echo "Branch $PROJECT_VERSION already exists. Failing job."
+          exit 1
+        fi
         
         # Create and push new branch
         git checkout -b "$PROJECT_VERSION"
