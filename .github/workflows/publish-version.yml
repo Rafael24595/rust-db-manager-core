@@ -16,7 +16,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
       
-  create_branch:
+  publish_branch:
     needs: build
     runs-on: ubuntu-latest
     steps:
