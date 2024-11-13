@@ -149,7 +149,7 @@ impl Configuration {
             None => return Err(ConfigurationException::new("Configuration is not initialized.")),
         };
         
-        Ok(config.services.iter().map(|s| DBServiceLite::new(s.1.name(), s.1.category())).collect())
+        Ok(config.services.iter().map(|s| DBServiceLite::new(s.1.name(), s.1.is_protected(), s.1.category())).collect())
     }
 
     pub fn find_service(key: &str) -> Result<Option<DBService>, ConfigurationException> {

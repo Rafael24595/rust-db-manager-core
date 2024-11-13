@@ -36,12 +36,33 @@ impl ExtractorMetadataMongoDb {
     
     pub(crate) fn from_db(server_info: &Document) -> Result<Vec<TableDataGroup>, ConnectException> {
         let mut metadata: Vec<TableDataGroup> = Vec::new();
+        if server_info.is_empty() {
+            metadata.push(Self::metadata_empty()?);
+            return Ok(metadata)    
+        }
+        
         metadata.push(Self::metadata_general(server_info)?);
         metadata.push(Self::metadata_connection(server_info)?);
         metadata.push(Self::metadata_lock(server_info)?);
         metadata.push(Self::metadata_operation(server_info)?);
 
         Ok(metadata)
+    }
+
+    fn metadata_empty() -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(0, String::from("general"));
+
+        group.push(
+            String::from("Status"),
+            String::from("Error")
+        );
+
+        group.push(
+            String::from("Cause"),
+            String::from("Unautorized")
+        );
+
+        Ok(group)
     }
 
     fn metadata_general(server_info: &Document) -> Result<TableDataGroup, ConnectException> {

@@ -15,6 +15,10 @@ impl DocumentQuery {
         Self::from(data_base, collection, None, None, Some(filter))
     }
     
+    pub fn from_query_unpaginated(query: &DocumentQuery) -> Self {
+        Self::from(query.data_base(), query.collection(), None, None, query.filter())
+    }
+
     pub fn from(data_base: String, collection: String, skip: Option<usize>, limit: Option<usize>, filter: Option<FilterElement>) -> Self {
         Self {
             data_base: data_base,

@@ -185,21 +185,12 @@ impl MongoDbRepository {
         if action == EAction::DELETE {
             self.delete_document(&collection, ids_to_action).await?;
         }
-        
-        let r_total = collection.estimated_document_count(None).await;
-        if let Err(error) = r_total {
-            let exception = ConnectException::new(error.to_string());
-            return Err(exception);
-        }
 
-        let total: Result<usize, _> = r_total.unwrap().try_into();
-        if let Err(error) = total {
-            let exception = ConnectException::new(error.to_string());
-            return Err(exception);
-        }
+        let total = self.find_cursor(&DocumentQuery::from_query_unpaginated(query)).await?
+            .count().await;
 
         let data = CollectionData::new(
-            cursor.count().await,
+            total,
             query.limit(),
             query.skip(), 
             documents
@@ -285,9 +276,17 @@ impl IDBRepository for MongoDbRepository {
 
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException> {
         let server_info = &self.client.database("admin")
-            .run_command(doc! {"serverStatus": 1}, None).await.unwrap();
+            .run_command(doc! {"serverStatus": 1}, None).await;
 
-        ExtractorMetadataMongoDb::from_db(server_info)
+        match server_info {
+            Err(err) => {
+                println!("{:?}", err);
+                return ExtractorMetadataMongoDb::from_db(&Document::new());
+            },
+            Ok(server_info) => {
+                return ExtractorMetadataMongoDb::from_db(&server_info)
+            }
+        }
     }
 
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException> {
