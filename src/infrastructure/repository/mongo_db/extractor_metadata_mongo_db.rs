@@ -23,7 +23,7 @@ use crate::{
             definition::{
                 table_definition::TableDefinition, table_row_definition::TableRowDefinition,
             },
-            group::table_data_group::TableDataGroup,
+            group::{e_data_type::EDataType, table_data_group::TableDataGroup},
         },
     },
 };
@@ -102,9 +102,10 @@ impl ExtractorMetadataMongoDb {
             String::from("Started"),
             formatted_date
         );
-        group.push(
+        group.push_typed(
             String::from("Uptime"),
-           uptime
+           uptime,
+           EDataType::TIMESTAMP
         );
 
         Ok(group)
@@ -286,12 +287,12 @@ impl ExtractorMetadataMongoDb {
         }
 
         group.push(String::from("Documents"), count.to_string());
-        group.push(String::from("Data size"), format!("{:?} Bytes", size));
-        group.push(String::from("Storage size"), format!("{:?} Bytes", storage_size));
-        group.push(String::from("Average Object size"), format!("{:?} Bytes", avg_obj_size));
+        group.push_typed(String::from("Data size"), format!("{:?}", size), EDataType::BYTE);
+        group.push_typed(String::from("Storage size"), format!("{:?}", storage_size), EDataType::BYTE);
+        group.push_typed(String::from("Average Object size"), format!("{:?}", avg_obj_size), EDataType::BYTE);
         group.push(String::from("Indexes Count"), nindexes.to_string());
-        group.push(String::from("Index size"),format!("{:?} Bytes", total_index_size));
-        group.push(String::from("Total Size"), total_size.to_string());
+        group.push_typed(String::from("Index size"),format!("{:?}", total_index_size), EDataType::BYTE);
+        group.push_typed(String::from("Total Size"), total_size.to_string(), EDataType::BYTE);
         group.push(String::from("Indexes"), index_sizes.to_string());
 
         Ok(group)

@@ -91,6 +91,7 @@ pub mod domain {
             pub mod table_row_definition;
         }
         pub mod group {
+            pub mod e_data_type;
             pub mod table_data_field;
             pub mod table_data_group;
         }

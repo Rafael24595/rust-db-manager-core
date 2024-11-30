@@ -1,4 +1,4 @@
-use super::table_data_field::TableDataField;
+use super::{e_data_type::EDataType, table_data_field::TableDataField};
 
 #[derive(Debug, Clone)]
 pub struct TableDataGroup {
@@ -32,6 +32,13 @@ impl TableDataGroup {
     pub fn push(&mut self, key: String, value: String) -> &mut Self {
         self.fields.push(
             TableDataField::new(self.fields.len(), key, value)
+        );
+        self
+    }
+
+    pub fn push_typed(&mut self, key: String, value: String, data_type: EDataType) -> &mut Self {
+        self.fields.push(
+            TableDataField::new_typed(self.fields.len(), key, value, data_type)
         );
         self
     }
