@@ -19,14 +19,13 @@ use crate::{
     infrastructure::repository::i_db_repository::IDBRepository,
 };
 
-#[derive(Clone)]
-pub struct Service<T: IDBRepository> {
-    repository: T,
+pub struct Service {
+    repository: Box<dyn IDBRepository>,
 }
 
-impl <T: IDBRepository> Service<T> {
+impl Service {
 
-    pub fn from(repository: T) -> Service<T> {
+    pub fn from(repository: Box<dyn IDBRepository>) -> Service {
         Service { repository }
     }
 

@@ -21,6 +21,9 @@ pub mod infrastructure {
             pub mod mongo_db_repository;
             pub mod mongo_utils;
         }
+        pub mod postgres {
+            pub mod postgres_repository;
+        }
         pub mod db_dictionary;
         pub mod e_db_repository;
         pub mod i_db_repository;

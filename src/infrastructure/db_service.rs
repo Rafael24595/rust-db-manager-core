@@ -107,7 +107,7 @@ impl DBService {
         self.name == other.name
     }
 
-    pub async fn instance(&self) -> Result<Service<impl IDBRepository>, ConnectException> {
+    pub async fn instance(&self) -> Result<Service, ConnectException> {
         let repository = db_dictionary::find(&self.connection_data).await?;
         Ok(Service::from(repository))
     }

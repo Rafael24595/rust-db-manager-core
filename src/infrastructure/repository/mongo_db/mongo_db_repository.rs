@@ -36,14 +36,13 @@ use super::{
     extractor_metadata_mongo_db::ExtractorMetadataMongoDb, mongo_db_actions::execute_collection_action,
 };
 
-#[derive(Clone)]
 pub struct MongoDbRepository {
     client: Client
 }
 
 impl MongoDbRepository {
     
-    pub async fn new(connection: &ConnectionData) -> Result<impl IDBRepository, ConnectException> {
+    pub async fn new(connection: &ConnectionData) -> Result<Box<dyn IDBRepository>, ConnectException> {
         let client = MongoDbRepository::connect(connection.connection()).await;
         if client.is_err() {
             let exception = ConnectException::new(client.err().unwrap().to_string());
@@ -54,7 +53,7 @@ impl MongoDbRepository {
             client: client.ok().unwrap()
         };
 
-        Ok(instance)
+        Ok(Box::new(instance))
     }
 
     async fn connect(connection: String) -> Result<Client, mongodb::error::Error> {

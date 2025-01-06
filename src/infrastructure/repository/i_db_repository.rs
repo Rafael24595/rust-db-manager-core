@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[async_trait]
-pub trait IDBRepository: Clone + Send + Sync {
+pub trait IDBRepository: Send + Sync {
     async fn status(&self) -> Result<(), ConnectException>;
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException>;
 
