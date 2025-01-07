@@ -14,6 +14,8 @@ use crate::{
     infrastructure::repository::i_db_repository::IDBRepository,
 };
 
+use super::extractor_metadata_postgres::ExtractorMetadataPostgres;
+
 pub struct PostgresRepository {
     client: Client,
 }
@@ -85,7 +87,7 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException> {
-        todo!()
+        ExtractorMetadataPostgres::from_db(&self.client).await
     }
 
     async fn data_base_metadata(

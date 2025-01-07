@@ -12,7 +12,7 @@ lazy_static = "1.4.0"
 async-trait = "0.1.80"
 futures-util = "0.3.30"
 mongodb = "2.8.2"
-tokio-postgres = "0.7.12"
+tokio-postgres = { version = "0.7.12", features=["with-chrono-0_4"] }
 crossterm = "0.27.0"
 uuid = "1.8.0"
 cargo_metadata = "0.18.1"

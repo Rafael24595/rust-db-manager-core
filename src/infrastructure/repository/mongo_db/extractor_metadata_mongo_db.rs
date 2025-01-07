@@ -29,6 +29,7 @@ use crate::{
 };
 
 use super::mongo_db_actions::ACTION_INDEXES_DELETE;
+
 pub(crate) struct ExtractorMetadataMongoDb {
 }
 
