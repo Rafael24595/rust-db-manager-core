@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use tokio_postgres::{Client, NoTls};
 use url::Url;
@@ -5,7 +7,7 @@ use url::Url;
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
-        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema}, filter::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
         }, table::{
             definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
@@ -17,7 +19,8 @@ use crate::{
 use super::extractor_metadata_postgres::ExtractorMetadataPostgres;
 
 pub struct PostgresRepository {
-    client: Client,
+    client_general: Client,
+    client_collections: HashMap<String, Client>
 }
 
 impl PostgresRepository {
@@ -30,7 +33,8 @@ impl PostgresRepository {
         }
 
         let instance = PostgresRepository {
-            client: client.ok().unwrap(),
+            client_general: client.ok().unwrap(),
+            client_collections: HashMap::new()
         };
 
         Ok(Box::new(instance))
@@ -80,14 +84,14 @@ impl PostgresRepository {
 impl IDBRepository for PostgresRepository {
 
     async fn status(&self) -> Result<(), ConnectException> {
-        match self.client.simple_query("SELECT 1").await {
+        match self.client_general.simple_query("SELECT 1").await {
             Ok(_) => Ok(()),
             Err(err) => Err(ConnectException::new(err.to_string())),
         }
     }
 
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException> {
-        ExtractorMetadataPostgres::from_db(&self.client).await
+        ExtractorMetadataPostgres::from_db(&self.client_general).await
     }
 
     async fn data_base_metadata(
@@ -98,7 +102,7 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException> {
-        let rows = self.client
+        let rows = self.client_general
             .query(
                 "SELECT datname 
                 FROM pg_database 
@@ -111,31 +115,59 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
         
+        let rows = rows.unwrap();
+
         let data_bases = rows.iter()
-            .map(|r| r.get(0)
-                .map(|r| String::from(r.get::<usize, &str>(0)))
-                .unwrap())
+            .map(|r| String::from(r.get::<usize, &str>(0)))
             .collect::<Vec<String>>();
 
         Ok(data_bases)
     }
 
     async fn data_base_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException> {
-        todo!()
+        let check_db_query = format!(
+            "SELECT 1 FROM pg_database WHERE datname = '{}';",
+            query.data_base()
+        );
+        
+        let db_exists = match self.client_general.query_one(&check_db_query, &[]).await {
+            Ok(_) => true,
+            Err(_) => false,
+        };
+
+        Ok(db_exists)
     }
 
     async fn data_base_create(
         &self,
         query: &GenerateDatabaseQuery,
     ) -> Result<String, ConnectException> {
-        todo!()
+        let data_base = query.data_base();
+        let create_db_query = format!("CREATE DATABASE {};", data_base);
+
+        let result = self.client_general.batch_execute(&create_db_query).await;
+        if let Err(result) = result {
+            let exception = ConnectException::new(result.to_string());
+            return Err(exception);
+        }
+
+        Ok(data_base)
     }
 
     async fn data_base_drop(
         &self,
         query: &GenerateDatabaseQuery,
     ) -> Result<String, ConnectException> {
-        todo!()
+        let data_base = query.data_base();
+        let create_db_query = format!("DROP DATABASE {};", data_base);
+        
+        let result = self.client_general.batch_execute(&create_db_query).await;
+        if let Err(result) = result {
+            let exception = ConnectException::new(result.to_string());
+            return Err(exception);
+        }
+
+        Ok(data_base)
     }
 
     async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {
