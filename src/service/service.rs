@@ -53,7 +53,7 @@ impl Service {
         return self.repository.data_base_find_all().await;
     }
 
-    pub async fn data_base_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
+    pub async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.data_base_metadata(query).await;
     }
 
@@ -105,7 +105,7 @@ impl Service {
         return self.repository.collection_import(query, documents).await;
     }
 
-    pub async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    pub async fn collection_find_all(&mut self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         return self.repository.collection_find_all(query).await;
     }
 

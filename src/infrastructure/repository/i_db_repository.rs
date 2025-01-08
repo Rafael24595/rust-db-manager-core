@@ -18,7 +18,7 @@ pub trait IDBRepository: Send + Sync {
     async fn status(&self) -> Result<(), ConnectException>;
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException>;
 
-    async fn data_base_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
+    async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException>;
     async fn data_base_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException>;
     async fn data_base_create(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
@@ -30,7 +30,7 @@ pub trait IDBRepository: Send + Sync {
     async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException>;
     async fn collection_action(&self, query: &CollectionQuery, code: &String) -> Result<Option<ActionDefinition>, ConnectException>;
     async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException>;
-    async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
+    async fn collection_find_all(&mut self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException>;
     async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
     async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;

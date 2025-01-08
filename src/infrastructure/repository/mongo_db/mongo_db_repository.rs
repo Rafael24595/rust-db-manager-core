@@ -330,7 +330,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(data_base)
     }
 
-    async fn data_base_metadata(&self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
+    async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let mut documents = Vec::new();
         
         let collections = self.collection_find_all(query).await?;
@@ -387,7 +387,7 @@ impl IDBRepository for MongoDbRepository {
         execute_collection_action(collection, action).await
     }
 
-    async fn collection_find_all(&self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
+    async fn collection_find_all(&mut self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let result = self.data_base(&query.data_base()).list_collection_names(None).await;
         if result.is_err() {
             let exception = ConnectException::new(result.unwrap_err().to_string());

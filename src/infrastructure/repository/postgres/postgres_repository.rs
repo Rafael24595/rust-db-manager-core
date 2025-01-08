@@ -19,6 +19,7 @@ use crate::{
 use super::extractor_metadata_postgres::ExtractorMetadataPostgres;
 
 pub struct PostgresRepository {
+    connection: String,
     client_general: Client,
     client_collections: HashMap<String, Client>
 }
@@ -26,21 +27,24 @@ pub struct PostgresRepository {
 impl PostgresRepository {
 
     pub async fn new(connection: &ConnectionData) -> Result<Box<dyn IDBRepository>, ConnectException> {
-        let client = PostgresRepository::connect(&connection.connection()).await;
-        if let Err(err) = client {
+        let result = PostgresRepository::connect(&connection.connection()).await;
+        if let Err(err) = result {
             let exception = ConnectException::new(err.to_string());
             return Err(exception);
         }
 
-        let instance = PostgresRepository {
-            client_general: client.ok().unwrap(),
+        let (connection, client) = result.unwrap();
+
+        let instance: PostgresRepository = PostgresRepository {
+            connection: connection,
+            client_general: client,
             client_collections: HashMap::new()
         };
 
         Ok(Box::new(instance))
     }
 
-    async fn connect(connection: &str) -> Result<Client, ConnectException> {
+    async fn connect(connection: &str) -> Result<(String, Client), ConnectException> {
         let url = Url::parse(connection);
         if let Err(err) = url {
             let exception = ConnectException::new(err.to_string());
@@ -59,7 +63,7 @@ impl PostgresRepository {
         let host = url.host_str().unwrap_or("localhost").to_string();
         let port = url.port().unwrap_or(5432);
 
-        let connection = format!("host={} port={} user={} password={}", host, port, username, password);
+        let connection_string = format!("host={} port={} user={} password={}", host, port, username, password);
 
         let result = tokio_postgres::connect(&connection, NoTls).await;
         if let Err(err) = result {
@@ -75,6 +79,35 @@ impl PostgresRepository {
             }
         });
 
+        Ok((connection_string, client))
+    }
+
+    async fn connect_table(&mut self, query: &DataBaseQuery) -> Result<&Client, ConnectException> {
+        let data_base = query.data_base();
+        if self.client_collections.contains_key(&data_base) {
+            let client = self.client_collections.get(&data_base).unwrap();
+            return Ok(client);
+        }
+
+        let connection = format!("{} dbname={}", self.connection, data_base);
+
+        let result = tokio_postgres::connect(&connection, NoTls).await;
+        if let Err(err) = result {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        let (client, connection) = result.unwrap();
+
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("Connection error: {}", e);
+            }
+        });
+
+        self.client_collections.insert(data_base.clone(), client);
+
+        let client = self.client_collections.get(&data_base).unwrap();
         Ok(client)
     }
 
@@ -95,7 +128,7 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn data_base_metadata(
-        &self,
+        &mut self,
         query: &DataBaseQuery,
     ) -> Result<Vec<TableDataGroup>, ConnectException> {
         todo!()
@@ -212,10 +245,29 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn collection_find_all(
-        &self,
+        &mut self,
         query: &DataBaseQuery,
     ) -> Result<Vec<String>, ConnectException> {
-        todo!()
+        let client = self.connect_table(query).await?;
+
+        let rows = client.query("
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            AND table_type = 'BASE TABLE';", &[]).await;
+
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+        
+        let rows = rows.unwrap();
+
+        let tables = rows.iter()
+            .map(|r| r.get::<usize, &str>(0).to_string())
+            .collect::<Vec<String>>();
+
+        Ok(tables)
     }
 
     async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {
