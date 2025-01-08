@@ -69,27 +69,9 @@ impl ExtractorMetadataMongoDb {
     fn metadata_general(server_info: &Document) -> Result<TableDataGroup, ConnectException> {
         let mut group = TableDataGroup::new(0, String::from("general"));
 
-        let n_timestamp = server_info.get("uptimeMillis")
+        let timestamp = server_info.get("uptimeMillis")
             .unwrap_or(&Bson::String(String::from("0")))
-            .to_string().parse::<i64>()
-            .unwrap_or_default()
-            .try_into()
-            .unwrap_or_default();
-
-        let now = Local::now();
-        let secs = Duration::from_millis(n_timestamp);
-        let timestamp = now - secs;
-
-        //let formatted_date = dt.format("%a %b %d %Y %H:%M:%S GMT%:z (%Z)").to_string();
-        let formatted_date = timestamp.to_string();
-
-        let duration = Local::now().signed_duration_since(timestamp);
-
-        let hours = duration.num_hours();
-        let minutes = duration.num_minutes() % 60;
-        let seconds = duration.num_seconds() % 60;
-
-        let uptime = format!("{}:{}:{}", hours, minutes, seconds);
+            .to_string();
 
         group.push(
             String::from("Hostname"),
@@ -99,13 +81,9 @@ impl ExtractorMetadataMongoDb {
             String::from("Version"),
             server_info.get("version").unwrap_or(&Bson::String(String::new())).to_string()
         );
-        group.push(
-            String::from("Started"),
-            formatted_date
-        );
         group.push_typed(
             String::from("Uptime"),
-           uptime,
+           timestamp,
            EDataType::TIMESTAMP
         );
 
