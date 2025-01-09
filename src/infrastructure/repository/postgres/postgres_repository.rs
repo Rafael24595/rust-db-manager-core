@@ -131,7 +131,8 @@ impl IDBRepository for PostgresRepository {
         &mut self,
         query: &DataBaseQuery,
     ) -> Result<Vec<TableDataGroup>, ConnectException> {
-        todo!()
+        let client = self.connect_table(query).await?;
+        ExtractorMetadataPostgres::from_collection(client).await
     }
 
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException> {

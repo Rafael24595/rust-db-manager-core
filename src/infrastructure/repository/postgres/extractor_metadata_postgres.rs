@@ -18,7 +18,6 @@ impl ExtractorMetadataPostgres {
         Ok(metadata)
     }
     
-    
     async fn metadata_general(client: &Client) -> Result<TableDataGroup, ConnectException> {
         let mut group = TableDataGroup::new(0, String::from("general"));
 
@@ -182,6 +181,63 @@ impl ExtractorMetadataPostgres {
         let port = row.get::<usize, &str>(0);
 
         Ok(port.to_string())
+    }
+
+    pub(crate) async fn from_collection(client: &Client) -> Result<Vec<TableDataGroup>, ConnectException> {
+        let mut metadata: Vec<TableDataGroup> = Vec::new();
+        
+        metadata.push(Self::collection_metadata_general(client).await?);
+
+        Ok(metadata)
+    }
+
+    async fn collection_metadata_general(client: &Client) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(0, String::from("general"));
+
+        group.push_typed(
+            String::from("Size"),
+           Self::collection_all_size(client).await?,
+           EDataType::BYTE
+        );
+
+        group.push(
+            String::from("Schemas"),
+           Self::collection_count_schemas(client).await?
+        );
+
+        Ok(group)
+    }
+
+    async fn collection_all_size(client: &Client) -> Result<String, ConnectException> {
+        let row = client.query_one("
+            SELECT SUM(pg_total_relation_size(relid)) AS total_size_in_bytes
+            FROM pg_catalog.pg_statio_user_tables;", &[]).await;
+        if let Err(err) = row {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        let row = row.unwrap();
+
+        let bytes = row.try_get::<usize, Decimal>(0);
+        if bytes.is_err() {
+            return Ok(0.to_string());
+        }
+
+        Ok(bytes.unwrap().to_string())
+    }
+
+    async fn collection_count_schemas(client: &Client) -> Result<String, ConnectException> {
+        let row = client.query("
+            SELECT schema_name FROM information_schema.schemata;", &[]).await;
+        if let Err(err) = row {
+            println!("{:?}", err.to_string());
+            return Ok(0.to_string());
+        }
+
+        let row = row.unwrap();
+
+        Ok(row.len().to_string())
     }
 
 }
