@@ -1,14 +1,12 @@
 use serde::Deserialize;
 
-use crate::domain::field::e_field_code::EFieldCode;
-
 use super::field_attribute_definition::FieldAttributeDefinition;
 
 #[derive(Clone, Deserialize)]
 pub struct FieldDefinition {
     order: usize,
     name: String,
-    code: EFieldCode,
+    code: String,
     swsize: bool,
     multiple: bool,
     attributes: Vec<FieldAttributeDefinition>
@@ -16,7 +14,7 @@ pub struct FieldDefinition {
 
 impl FieldDefinition {
     
-    pub fn new(order: usize, name: String, code: EFieldCode, swsize: bool, multiple: bool, attributes: Vec<FieldAttributeDefinition>) -> Self {
+    pub fn new(order: usize, name: String, code: String, swsize: bool, multiple: bool, attributes: Vec<FieldAttributeDefinition>) -> Self {
         Self {
             order, name, code,
             swsize, multiple,
@@ -28,12 +26,12 @@ impl FieldDefinition {
         self.order
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn code(&self) -> EFieldCode {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
     pub fn swsize(&self) -> bool {

@@ -1,13 +1,11 @@
 use serde::Deserialize;
 
-use crate::domain::field::e_field_code::EFieldCode;
-
 use super::{field_attribute::FieldAttribute, field_reference::FieldReference};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct FieldData {
     order: i32,
-    code: EFieldCode,
+    code: String,
     value: String,
     swsize: bool,
     size: i32,
@@ -18,7 +16,7 @@ pub struct FieldData {
 
 impl FieldData {
  
-    pub fn new(order: i32, code: EFieldCode, value: String, swsize: bool, size: i32, mutable: bool, attributes: Vec<FieldAttribute>, reference: Vec<FieldReference>) -> Self {
+    pub fn new(order: i32, code: String, value: String, swsize: bool, size: i32, mutable: bool, attributes: Vec<FieldAttribute>, reference: Vec<FieldReference>) -> Self {
         Self { 
             order, code, value, 
             swsize, size, mutable, 
@@ -30,12 +28,12 @@ impl FieldData {
         self.order
     }
 
-    pub fn code(&self) -> EFieldCode {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn value(&self) -> String {
-        self.value.clone()
+    pub fn value(&self) -> &str {
+        &self.value
     }
 
     pub fn is_resize(&self) -> bool {

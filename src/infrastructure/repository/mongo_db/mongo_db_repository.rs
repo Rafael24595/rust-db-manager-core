@@ -368,7 +368,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(collection)
     }
 
-    async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
+    async fn collection_actions(&mut self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
         let collection = self.collection(&query.data_base(), &query.collection());
         let definition = ExtractorMetadataMongoDb::collection_actions(collection).await?;
 

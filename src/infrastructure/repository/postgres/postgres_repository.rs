@@ -5,7 +5,7 @@ use tokio_postgres::{Client, NoTls};
 use url::Url;
 
 use crate::{
-    commons::exception::connect_exception::ConnectException,
+    commons::{configuration::definition::postgres::postgres_collection, exception::connect_exception::ConnectException},
     domain::{
         action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
@@ -82,10 +82,17 @@ impl PostgresRepository {
         Ok((connection_string, client))
     }
 
-    async fn connect_table(&mut self, query: &DataBaseQuery) -> Result<&Client, ConnectException> {
-        let data_base = query.data_base();
-        if self.client_collections.contains_key(&data_base) {
-            let client = self.client_collections.get(&data_base).unwrap();
+    async fn connect_table_from_db(&mut self, query: &DataBaseQuery) -> Result<&Client, ConnectException> {
+        self.connect_table(&query.data_base()).await
+    }
+    
+    async fn connect_table_from_collection(&mut self, query: &CollectionQuery) -> Result<&Client, ConnectException> {
+        self.connect_table(&query.data_base()).await
+    }
+
+    async fn connect_table(&mut self, data_base: &str) -> Result<&Client, ConnectException> {
+        if self.client_collections.contains_key(data_base) {
+            let client = self.client_collections.get(data_base).unwrap();
             return Ok(client);
         }
 
@@ -105,9 +112,9 @@ impl PostgresRepository {
             }
         });
 
-        self.client_collections.insert(data_base.clone(), client);
+        self.client_collections.insert(data_base.to_string(), client);
 
-        let client = self.client_collections.get(&data_base).unwrap();
+        let client = self.client_collections.get(data_base).unwrap();
         Ok(client)
     }
 
@@ -131,7 +138,7 @@ impl IDBRepository for PostgresRepository {
         &mut self,
         query: &DataBaseQuery,
     ) -> Result<Vec<TableDataGroup>, ConnectException> {
-        let client = self.connect_table(query).await?;
+        let client = self.connect_table_from_db(query).await?;
         ExtractorMetadataPostgres::from_collection(client).await
     }
 
@@ -205,7 +212,9 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {
-        todo!()
+        let json = postgres_collection();
+        let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
+        Ok(definition)
     }
 
     async fn collection_metadata(
@@ -223,10 +232,12 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn collection_actions(
-        &self,
+        &mut self,
         query: &CollectionQuery,
     ) -> Result<Vec<ActionDefinition>, ConnectException> {
-        todo!()
+        let client = self.connect_table_from_collection(query).await?;
+        let definition = ExtractorMetadataPostgres::collection_actions(client).await?;
+        Ok(definition)
     }
 
     async fn collection_action(
@@ -249,7 +260,7 @@ impl IDBRepository for PostgresRepository {
         &mut self,
         query: &DataBaseQuery,
     ) -> Result<Vec<String>, ConnectException> {
-        let client = self.connect_table(query).await?;
+        let client = self.connect_table_from_db(query).await?;
 
         let rows = client.query("
             SELECT table_name

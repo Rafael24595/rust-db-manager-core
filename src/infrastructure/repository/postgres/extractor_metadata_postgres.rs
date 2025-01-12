@@ -2,8 +2,16 @@ use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use tokio_postgres::Client;
 
-use crate::{commons::exception::connect_exception::ConnectException, domain::table::group::{e_data_type::EDataType, table_data_group::TableDataGroup}};
-
+use crate::{
+    commons::{
+        configuration::definition::postgres::postgres_collection_actions,
+        exception::connect_exception::ConnectException,
+    },
+    domain::{
+        action::definition::action_definition::ActionDefinition,
+        table::group::{e_data_type::EDataType, table_data_group::TableDataGroup},
+    },
+};
 pub(crate) struct ExtractorMetadataPostgres {
 }
 
@@ -238,6 +246,13 @@ impl ExtractorMetadataPostgres {
         let row = row.unwrap();
 
         Ok(row.len().to_string())
+    }
+
+    pub(crate) async fn collection_actions(client: &Client) -> Result<Vec<ActionDefinition>, ConnectException> {
+        let json = postgres_collection_actions();
+        let definition: Vec<ActionDefinition> = serde_json::from_str(&json).expect("Failed to parse JSON");
+    
+        Ok(definition)
     }
 
 }

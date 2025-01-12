@@ -69,7 +69,7 @@ impl Service {
         return self.repository.collection_information(query).await;
     }
 
-    pub async fn collection_actions(&self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
+    pub async fn collection_actions(&mut self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
         return self.repository.collection_actions(query).await;
     }
 

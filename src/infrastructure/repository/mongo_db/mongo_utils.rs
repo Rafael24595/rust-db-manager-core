@@ -4,7 +4,7 @@ use serde_json::from_str;
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
-        field::{e_field_code::EFieldCode, generate::field_data::FieldData},
+        field::generate::field_data::FieldData,
         filter::{
             e_filter_category::EFilterCategory, filter_element::FilterElement,
             filter_value::FilterValue,
@@ -239,7 +239,7 @@ impl FieldData {
     }
 
     pub fn as_mongo_create(&self) -> Result<IndexModel, ConnectException> {
-        if self.code() != EFieldCode::INDEXED {
+        if self.code() != "INDEXED" {
             let exception = ConnectException::new(String::from("Field type not supported."));
             return Err(exception);
         }

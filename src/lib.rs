@@ -2,8 +2,10 @@ pub mod commons {
     pub mod configuration {
         pub mod definition {
             pub mod mongo_db;
+            pub mod postgres;
         }
         pub mod configuration;
+        pub mod db_connection;
     }
     pub mod exception {
         pub mod configuration_exception;
@@ -72,7 +74,6 @@ pub mod domain {
             pub mod field_data;
             pub mod field_reference;
         }
-        pub mod e_field_code;
     }
     pub mod filter {
         pub mod definition {
