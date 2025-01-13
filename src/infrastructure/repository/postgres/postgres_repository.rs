@@ -90,6 +90,10 @@ impl PostgresRepository {
         self.connect_table(&query.data_base()).await
     }
 
+    async fn connect_table_from_document(&mut self, query: &DocumentQuery) -> Result<&Client, ConnectException> {
+        self.connect_table(&query.data_base()).await
+    }
+
     async fn connect_table(&mut self, data_base: &str) -> Result<&Client, ConnectException> {
         if self.client_collections.contains_key(data_base) {
             let client = self.client_collections.get(data_base).unwrap();
@@ -180,7 +184,7 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn data_base_create(
-        &self,
+        &mut self,
         query: &GenerateDatabaseQuery,
     ) -> Result<String, ConnectException> {
         let data_base = query.data_base();
@@ -267,7 +271,6 @@ impl IDBRepository for PostgresRepository {
             FROM information_schema.tables
             WHERE table_schema = 'public'
             AND table_type = 'BASE TABLE';", &[]).await;
-
         if let Err(err) = rows {
             let exception = ConnectException::new(err.to_string());
             return Err(exception);
@@ -282,7 +285,7 @@ impl IDBRepository for PostgresRepository {
         Ok(tables)
     }
 
-    async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {
+    async fn collection_exists(&mut self, query: &CollectionQuery) -> Result<bool, ConnectException> {
         todo!()
     }
 
@@ -309,7 +312,7 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn collection_export(
-        &self,
+        &mut self,
         query: &CollectionQuery,
     ) -> Result<Vec<DocumentData>, ConnectException> {
         todo!()
@@ -327,15 +330,24 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn find_all(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+    async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         todo!()
     }
 
-    async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+    async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+        let client = self.connect_table_from_document(query).await?;
+
+        let sql = query.as_postres_sql()?;
+        let rows = client.query(&sql, &[]).await;
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
         todo!()
     }
 
-    async fn find(&self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
+    async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
         todo!()
     }
 

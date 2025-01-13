@@ -21,7 +21,7 @@ pub trait IDBRepository: Send + Sync {
     async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException>;
     async fn data_base_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException>;
-    async fn data_base_create(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
+    async fn data_base_create(&mut self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
     async fn data_base_drop(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
 
     async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException>;
@@ -31,17 +31,17 @@ pub trait IDBRepository: Send + Sync {
     async fn collection_action(&self, query: &CollectionQuery, code: &String) -> Result<Option<ActionDefinition>, ConnectException>;
     async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException>;
     async fn collection_find_all(&mut self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
-    async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException>;
+    async fn collection_exists(&mut self, query: &CollectionQuery) -> Result<bool, ConnectException>;
     async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
     async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
     async fn collection_rename(&self, query: &CollectionQuery, name: &str) -> Result<String, ConnectException>;
-    async fn collection_export(&self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException>;
+    async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException>;
     async fn collection_import(&self, query: &CollectionQuery, documents: Vec<String>) -> Result<String, ConnectException>;
     
     async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException>;
-    async fn find_all(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
-    async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
-    async fn find(&self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException>;
+    async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
+    async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
+    async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException>;
     async fn schema(&self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException>;
     async fn insert(&self, query: &CollectionQuery, value: &str) -> Result<DocumentData, ConnectException>;
     async fn update(&self, query: &DocumentQuery, value: &str) -> Result<Vec<DocumentData>, ConnectException>;

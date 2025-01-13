@@ -26,6 +26,7 @@ pub mod infrastructure {
         pub mod postgres {
             pub mod extractor_metadata_postgres;
             pub mod postgres_repository;
+            pub mod postgres_utils;
         }
         pub mod db_dictionary;
         pub mod e_db_repository;

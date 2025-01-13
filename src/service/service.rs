@@ -41,7 +41,7 @@ impl Service {
         return self.repository.data_base_exists(query).await;
     }
 
-    pub async fn data_base_create(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
+    pub async fn data_base_create(&mut self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
         return self.repository.data_base_create(query).await;
     }
 
@@ -81,7 +81,7 @@ impl Service {
         return self.repository.collection_execute_action(query, action).await;
     }
 
-    pub async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {
+    pub async fn collection_exists(&mut self, query: &CollectionQuery) -> Result<bool, ConnectException> {
         return self.repository.collection_exists(query).await;
     }
 
@@ -97,7 +97,7 @@ impl Service {
         return self.repository.collection_rename(query, name).await;
     }
 
-    pub async fn collection_export(&self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
+    pub async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
         return self.repository.collection_export(query).await;
     }
 
@@ -113,15 +113,15 @@ impl Service {
         return self.repository.filter_schema().await;
     }
 
-    pub async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+    pub async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         return self.repository.find_query(query).await;
     }
 
-    pub async fn find_all(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+    pub async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         return self.repository.find_all(query).await;
     }
     
-    pub async fn find(&self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
+    pub async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
         return self.repository.find(query).await;
     }
 

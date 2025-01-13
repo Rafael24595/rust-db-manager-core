@@ -1,5 +1,6 @@
 use super::filter_element::FilterElement;
 
+//TODO: Add sort parameter.
 #[derive(Clone)]
 pub struct DocumentQuery {
     data_base: String,

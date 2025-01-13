@@ -304,7 +304,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(databases.iter().any(|name| name == &query.data_base()))
     }
 
-    async fn data_base_create(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
+    async fn data_base_create(&mut self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
         let data_base = query.data_base();
         let temp_col = format!("TEMP_{}", Uuid::new_v4().to_string());
         let fix = CollectionQuery::from(data_base.clone(), temp_col.clone());
@@ -396,7 +396,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(result.ok().unwrap())
     }
 
-    async fn collection_exists(&self, query: &CollectionQuery) -> Result<bool, ConnectException> {
+    async fn collection_exists(&mut self, query: &CollectionQuery) -> Result<bool, ConnectException> {
         let fix = DocumentQuery::from(query.data_base(), query.collection(), Some(0), Some(1), None);
         let collections = self.find(&fix).await?;
         
@@ -452,7 +452,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(String::from(name))
     }
 
-    async fn collection_export(&self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
+    async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
         let fix = DocumentQuery::from(query.data_base(), query.collection(), None, None, None);
         Ok(self.find_all(&fix).await?.documents())
     }
@@ -481,16 +481,16 @@ impl IDBRepository for MongoDbRepository {
         Ok(definition)
     }
 
-    async fn find_query(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+    async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         Ok(self.query_action(query, EAction::FIND, None).await?)
     }
 
-    async fn find_all(&self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
+    async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         let fix = DocumentQuery::from(query.data_base(), query.collection(), query.skip(), query.limit(), None);
         return self.find_query(&fix).await;
     }
 
-    async fn find(&self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
+    async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
         let fix = DocumentQuery::from(query.data_base(), query.collection(), None, None, query.filter());
         let documents = self.find_query(&fix).await?.documents();
         Ok(documents.first().cloned())
