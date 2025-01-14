@@ -7,6 +7,7 @@ pub struct FieldDefinition {
     order: usize,
     name: String,
     code: String,
+    swkey: bool,
     swsize: bool,
     multiple: bool,
     attributes: Vec<FieldAttributeDefinition>
@@ -14,10 +15,10 @@ pub struct FieldDefinition {
 
 impl FieldDefinition {
     
-    pub fn new(order: usize, name: String, code: String, swsize: bool, multiple: bool, attributes: Vec<FieldAttributeDefinition>) -> Self {
+    pub fn new(order: usize, name: String, code: String, swkey: bool, swsize: bool, multiple: bool, attributes: Vec<FieldAttributeDefinition>) -> Self {
         Self {
             order, name, code,
-            swsize, multiple,
+            swkey, swsize, multiple,
             attributes
         }
     }
@@ -34,7 +35,11 @@ impl FieldDefinition {
         &self.code
     }
 
-    pub fn swsize(&self) -> bool {
+    pub fn can_key(&self) -> bool {
+        self.swkey
+    }
+
+    pub fn has_size(&self) -> bool {
         self.swsize
     }
 

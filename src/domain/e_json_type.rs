@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq)]
+use serde::Deserialize;
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub enum EJSONType {
     STRING,
     BOOLEAN,

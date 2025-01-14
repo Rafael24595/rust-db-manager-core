@@ -11,7 +11,6 @@ pub mod commons {
         pub mod configuration_exception;
         pub mod connect_exception;
     }
-    pub mod utils;
 }
 pub mod infrastructure {
     pub mod repository {

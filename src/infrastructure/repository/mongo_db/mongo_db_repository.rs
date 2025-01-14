@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 use crate::{
     commons::{
-        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_filter},
+        configuration::definition::mongo_db::{mongo_db_collection, mongo_db_collection_schema, mongo_db_filter},
         exception::connect_exception::ConnectException,
     },
     domain::{
@@ -20,9 +20,8 @@ use crate::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
         }, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{
-            document_data::DocumentData, document_key::DocumentKey,
-            document_key_attribute::DocumentKeyAttribute, document_schema::DocumentSchema,
-        }, e_json_type::EJSONType, field::generate::field_data::FieldData, filter::{
+            document_data::DocumentData, document_schema::DocumentSchema,
+        }, field::generate::field_data::FieldData, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery,
             definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
             filter_element::FilterElement,
@@ -32,7 +31,7 @@ use crate::{
 };
 
 use super::{
-    e_action::EAction, e_filter_attributes::EFilterAtributtes,
+    e_action::EAction,
     extractor_metadata_mongo_db::ExtractorMetadataMongoDb, mongo_db_actions::execute_collection_action,
 };
 
@@ -113,45 +112,6 @@ impl MongoDbRepository {
             .run_command(doc! {"collStats": collection}, None).await.unwrap())
     }
 
-    fn document_keys(&self, document: &Document) -> Result<Vec<DocumentKey>, ConnectException> {
-        let mut keys = Vec::new();
-
-        let key = "_id";
-
-        let o_id = document.get(key);
-        if let None = o_id {
-            let exception = ConnectException::new(String::from("Identifier not found."));
-            return Err(exception);
-        }
-
-        let base_key = match document.get_object_id(key) {
-            Ok(oid) => DocumentKey::new(
-                String::from("_id"), 
-                oid.to_hex(), 
-                EJSONType::STRING,
-                Vec::from(vec![
-                    DocumentKeyAttribute::new(EFilterAtributtes::OID.to_string(), String::from("true"))
-                ])
-            ),
-            Err(_) => {
-                let id = o_id.unwrap().as_str();
-                if let None = id {
-                    let exception = ConnectException::new(String::from("Identifier not found."));
-                    return Err(exception);
-                }
-                DocumentKey::new(
-                String::from(key), 
-                String::from(id.unwrap()),
-                EJSONType::STRING,
-                Vec::new())
-            },
-        };
-        
-        keys.push(base_key);
-
-        Ok(keys)
-    }
-
     async fn query_action(&self, query: &DocumentQuery, action: EAction, value: Option<&str>) -> Result<CollectionData, ConnectException> {
         let mut documents = Vec::<DocumentData>::new();
         
@@ -205,16 +165,8 @@ impl MongoDbRepository {
             return Err(exception);
         }
 
-        let keys = self.document_keys(&document)?;
-        let base_key = keys.iter().find(|k| k.name() == "_id");
-        if let None = base_key {
-            let exception = ConnectException::new(String::from("Base identifier not found."));
-            return Err(exception);
-        }
-
         Ok(DocumentData::new(
-            data_base, collection, base_key.cloned(),
-            keys, json.ok().unwrap()
+            data_base, collection, json.ok().unwrap()
         ))
     }
 
@@ -497,11 +449,12 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn schema(&self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
-        let fields = Vec::new();
+        let fields = mongo_db_collection_schema();
+        let definition: Vec<FieldData> = serde_json::from_str(&fields).expect("Failed to parse JSON");
         let comments = Vec::from(vec![
             String::from("If '_id' field is not defined it will be created with an ObjectId default value.")
         ]);
-        Ok(DocumentSchema::new(comments, false, fields))
+        Ok(DocumentSchema::new(comments, false, definition))
     }
 
     async fn insert(&self, query: &CollectionQuery, value: &str) -> Result<DocumentData, ConnectException> {

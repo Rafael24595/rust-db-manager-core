@@ -10,6 +10,7 @@ pub fn mongo_db_collection() -> String {
                     "order": 0,
                     "name": "Index",
                     "code": "INDEXED",
+                    "swkey": false,
                     "swsize": false,
                     "multiple": true,
                     "attributes": [
@@ -49,9 +50,11 @@ pub fn mongo_db_collection() -> String {
                     "order": 0,
                     "code": "INDEXED",
                     "value": "_id",
+                    "swkey": true,
                     "swsize": false,
                     "size": 0,
                     "mutable": false,
+                    "json_type": "STRING",
                     "attributes": [
                         {
                             "key": "UNIQUE",
@@ -66,6 +69,34 @@ pub fn mongo_db_collection() -> String {
                 }
             ]
         }
+    ).to_string()
+}
+
+pub fn mongo_db_collection_schema() -> String {
+    json!(
+        [
+            {
+                "order": 0,
+                "code": "ID",
+                "value": "_id",
+                "swkey": true,
+                "swsize": false,
+                "size": 0,
+                "mutable": false,
+                "json_type": "STRING",
+                "attributes": [
+                    {
+                        "key": "OID",
+                        "value": "true"
+                    },
+                    {
+                        "key": "$MAP",
+                        "value": "$oid"
+                    }
+                ],
+                "reference": []
+            }
+        ]
     ).to_string()
 }
 

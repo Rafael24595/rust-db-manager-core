@@ -1,5 +1,7 @@
 use serde::Deserialize;
 
+use crate::domain::e_json_type::EJSONType;
+
 use super::{field_attribute::FieldAttribute, field_reference::FieldReference};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -7,20 +9,23 @@ pub struct FieldData {
     order: i32,
     code: String,
     value: String,
+    swkey: bool,
     swsize: bool,
     size: i32,
     mutable: bool,
+    json_type: EJSONType,
     attributes: Vec<FieldAttribute>,
     reference: Vec<FieldReference>
 }
 
 impl FieldData {
  
-    pub fn new(order: i32, code: String, value: String, swsize: bool, size: i32, mutable: bool, attributes: Vec<FieldAttribute>, reference: Vec<FieldReference>) -> Self {
+    pub fn new(order: i32, code: String, value: String, swkey: bool, swsize: bool, size: i32, mutable: bool, json_type: EJSONType, attributes: Vec<FieldAttribute>, reference: Vec<FieldReference>) -> Self {
         Self { 
             order, code, value, 
-            swsize, size, mutable, 
-            attributes, reference 
+            swkey, swsize, size, 
+            mutable, json_type, attributes, 
+            reference 
         }
     }
 
@@ -36,6 +41,10 @@ impl FieldData {
         &self.value
     }
 
+    pub fn is_key(&self) -> bool {
+        self.swkey
+    }
+
     pub fn is_resize(&self) -> bool {
         self.swsize
     }
@@ -46,6 +55,10 @@ impl FieldData {
 
     pub fn is_mutable(&self) -> bool {
         self.mutable
+    }
+
+    pub fn json_type(&self) -> &EJSONType {
+        &self.json_type
     }
 
     pub fn attributes(&self) -> Vec<FieldAttribute> {
