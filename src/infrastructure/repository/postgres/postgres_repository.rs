@@ -7,7 +7,7 @@ use url::Url;
 use crate::{
     commons::{configuration::definition::postgres::postgres_collection, exception::connect_exception::ConnectException},
     domain::{
-        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, filter::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, field::generate::field_data::FieldData, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
         }, table::{
             definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
@@ -120,6 +120,45 @@ impl PostgresRepository {
 
         let client = self.client_collections.get(data_base).unwrap();
         Ok(client)
+    }
+
+    async fn keys(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
+        let client = self.connect_table_from_collection(query).await?;
+        let rows = client.query(
+            "SELECT kcu.column_name,
+                    CASE
+                        WHEN tc.constraint_type = 'PRIMARY KEY' THEN 'PRIMARY KEY'
+                        WHEN tc.constraint_type = 'FOREIGN KEY' THEN 'FOREIGN KEY'
+                    END AS key_type,
+                    ccu.table_name AS foreign_table,
+                    ccu.column_name AS foreign_column
+             FROM information_schema.key_column_usage kcu
+             JOIN information_schema.table_constraints tc
+               ON kcu.constraint_name = tc.constraint_name
+             LEFT JOIN information_schema.constraint_column_usage ccu
+               ON ccu.constraint_name = tc.constraint_name
+             WHERE kcu.table_schema = $1
+               AND kcu.table_name = $2;",
+            &[&"public", &query.collection()]).await;
+    
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        for row in rows.unwrap() {
+            let column_name: &str = row.get("column_name");
+            let key_type: Option<&str> = row.get("key_type");
+            let foreign_table: Option<&str> = row.get("foreign_table");
+            let foreign_column: Option<&str> = row.get("foreign_column");
+    
+            println!(
+                "Column: {}, Key Type: {:?}, Foreign Table: {:?}, Foreign Column: {:?}",
+                column_name, key_type, foreign_table, foreign_column
+            );
+        }
+
+        todo!()
     }
 
 }
@@ -351,7 +390,40 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn schema(&self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
+    async fn schema(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
+        let client = self.connect_table_from_collection(query).await?;
+        let rows = client.query(
+            "SELECT column_name, udt_name, data_type, is_nullable, character_maximum_length
+             FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = $1",
+            &[&query.collection()]).await;
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        self.keys(query).await;
+
+        for (i, row) in rows.unwrap().iter().enumerate() {
+            let column_name: &str = row.get("column_name");
+            let udt_name: &str = row.get("udt_name");
+            let data_type: &str = row.get("data_type");
+            let is_nullable: &str = row.get("is_nullable");
+            let char_max_len: Option<i32> = row.get("character_maximum_length");
+
+            let size = match char_max_len {
+                Some(s) => s,
+                None => 0
+            };
+
+            //FieldData::new(i as i32, String::from(udt_name), String::from(column_name), swkey, char_max_len.is_some(), size, true, json_type, Vec::new(), reference);
+
+            println!(
+                "Column: {}, Udt Name: {}, Type: {}, Nullable: {}, Max Length: {:?}",
+                column_name, udt_name, data_type, is_nullable, char_max_len
+            );
+        }
+
         todo!()
     }
 

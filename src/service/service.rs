@@ -125,7 +125,7 @@ impl Service {
         return self.repository.find(query).await;
     }
 
-    pub async fn schema(&self, query: &CollectionQuery) ->  Result<DocumentSchema, ConnectException> {
+    pub async fn schema(&mut self, query: &CollectionQuery) ->  Result<DocumentSchema, ConnectException> {
         return self.repository.schema(query).await;
     }
 

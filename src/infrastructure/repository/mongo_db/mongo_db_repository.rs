@@ -448,7 +448,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(documents.first().cloned())
     }
 
-    async fn schema(&self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
+    async fn schema(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
         let fields = mongo_db_collection_schema();
         let definition: Vec<FieldData> = serde_json::from_str(&fields).expect("Failed to parse JSON");
         let comments = Vec::from(vec![

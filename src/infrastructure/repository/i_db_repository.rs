@@ -42,7 +42,7 @@ pub trait IDBRepository: Send + Sync {
     async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
     async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
     async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException>;
-    async fn schema(&self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException>;
+    async fn schema(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException>;
     async fn insert(&self, query: &CollectionQuery, value: &str) -> Result<DocumentData, ConnectException>;
     async fn update(&self, query: &DocumentQuery, value: &str) -> Result<Vec<DocumentData>, ConnectException>;
     async fn delete(&self, query: &DocumentQuery) -> Result<Vec<DocumentData>, ConnectException>;
