@@ -20,7 +20,7 @@ use crate::{
             collection_data::CollectionData, collection_definition::CollectionDefinition,
             generate_collection_query::GenerateCollectionQuery,
         }, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{
-            document_data::DocumentData, document_schema::DocumentSchema,
+            document_data::DocumentData, document_schema::DocumentSchema, e_document_format::EDocumentFormat,
         }, field::generate::field_data::FieldData, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery,
             definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
@@ -166,7 +166,7 @@ impl MongoDbRepository {
         }
 
         Ok(DocumentData::new(
-            data_base, collection, json.ok().unwrap()
+            EDocumentFormat::JSON, data_base, collection, json.ok().unwrap()
         ))
     }
 

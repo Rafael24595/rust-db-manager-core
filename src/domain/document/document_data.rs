@@ -1,5 +1,8 @@
+use super::e_document_format::EDocumentFormat;
+
 #[derive(Debug, Clone)]
 pub struct DocumentData {
+    format: EDocumentFormat,
     data_base: String,
     collection: String,
     document: String
@@ -7,10 +10,14 @@ pub struct DocumentData {
 
 impl DocumentData {
     
-    pub fn new(data_base: String, collection: String, document: String) -> Self {
+    pub fn new(format: EDocumentFormat, data_base: String, collection: String, document: String) -> Self {
         Self {
-            data_base, collection, document
+            format, data_base, collection, document
         }
+    }
+
+    pub fn format(&self) -> EDocumentFormat {
+        self.format.clone()
     }
 
     pub fn data_base(&self) -> String {

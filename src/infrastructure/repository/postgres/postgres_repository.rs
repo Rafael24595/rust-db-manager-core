@@ -7,13 +7,13 @@ use url::Url;
 use crate::{
     commons::{configuration::definition::postgres::postgres_collection, exception::connect_exception::ConnectException},
     domain::{
-        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, field::generate::field_data::FieldData, filter::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, field::generate::{field_data::FieldData, field_reference::FieldReference}, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
         }, table::{
             definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
         }
     },
-    infrastructure::repository::i_db_repository::IDBRepository,
+    infrastructure::repository::{i_db_repository::IDBRepository, postgres::postgres_utils::postgres_to_json_type},
 };
 
 use super::extractor_metadata_postgres::ExtractorMetadataPostgres;
@@ -122,7 +122,7 @@ impl PostgresRepository {
         Ok(client)
     }
 
-    async fn keys(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
+    async fn keys(&mut self, query: &CollectionQuery) -> Result<HashMap<String, FieldReference>, ConnectException> {
         let client = self.connect_table_from_collection(query).await?;
         let rows = client.query(
             "SELECT kcu.column_name,
@@ -146,19 +146,28 @@ impl PostgresRepository {
             return Err(exception);
         }
 
+        let mut references = HashMap::new();
+
         for row in rows.unwrap() {
-            let column_name: &str = row.get("column_name");
-            let key_type: Option<&str> = row.get("key_type");
-            let foreign_table: Option<&str> = row.get("foreign_table");
-            let foreign_column: Option<&str> = row.get("foreign_column");
-    
-            println!(
-                "Column: {}, Key Type: {:?}, Foreign Table: {:?}, Foreign Column: {:?}",
-                column_name, key_type, foreign_table, foreign_column
-            );
+            let column_name: String = row.get("column_name");
+            let _: Option<String> = row.get("key_type"); //TODO: Implement.
+            let foreign_table: Option<String> = row.get("foreign_table");
+            let foreign_column: Option<String> = row.get("foreign_column");
+
+            if foreign_column.is_none() && foreign_table.is_none() {
+                continue;
+            }
+
+            let column_name = column_name.clone();
+
+            let foreing_table = foreign_table.unwrap();
+            let foreign_column = foreign_column.unwrap();
+            let reference = FieldReference::new(foreing_table.to_owned(), foreign_column.to_owned());
+
+            references.insert(column_name, reference);
         }
 
-        todo!()
+        Ok(references)
     }
 
 }
@@ -393,7 +402,7 @@ impl IDBRepository for PostgresRepository {
     async fn schema(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {
         let client = self.connect_table_from_collection(query).await?;
         let rows = client.query(
-            "SELECT column_name, udt_name, data_type, is_nullable, character_maximum_length
+            "SELECT column_name, data_type, character_maximum_length
              FROM information_schema.columns
              WHERE table_schema = 'public' AND table_name = $1",
             &[&query.collection()]).await;
@@ -402,29 +411,54 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
 
-        self.keys(query).await;
+        let keys = self.keys(query).await;
+        if let Err(err) = keys {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
 
+        let keys = keys.unwrap();
+
+        let mut fields = Vec::new();
         for (i, row) in rows.unwrap().iter().enumerate() {
             let column_name: &str = row.get("column_name");
-            let udt_name: &str = row.get("udt_name");
             let data_type: &str = row.get("data_type");
-            let is_nullable: &str = row.get("is_nullable");
             let char_max_len: Option<i32> = row.get("character_maximum_length");
+
+            let column_name = String::from(column_name);
 
             let size = match char_max_len {
                 Some(s) => s,
                 None => 0
             };
 
-            //FieldData::new(i as i32, String::from(udt_name), String::from(column_name), swkey, char_max_len.is_some(), size, true, json_type, Vec::new(), reference);
+            let key = keys.get(&column_name);
+            let reference = match key {
+                Some(s) => vec![s.clone()],
+                None => Vec::new()
+            };
 
-            println!(
-                "Column: {}, Udt Name: {}, Type: {}, Nullable: {}, Max Length: {:?}",
-                column_name, udt_name, data_type, is_nullable, char_max_len
+            let json_type = postgres_to_json_type(data_type);
+
+            let field = FieldData::new(
+                i as i32, 
+                column_name.to_uppercase(), 
+                column_name, 
+                key.is_some(), 
+                char_max_len.is_some(), 
+                size, 
+                true, 
+                json_type, 
+                Vec::new(), 
+                reference
             );
+
+            fields.push(field);
         }
 
-        todo!()
+        let schema = DocumentSchema::new(Vec::new(), true, fields);
+
+        Ok(schema)
     }
 
     async fn insert(

@@ -62,6 +62,7 @@ pub mod domain {
         pub mod document_key;
         pub mod document_key_attribute;
         pub mod document_schema;
+        pub mod e_document_format;
     }
     pub mod field {
         pub mod definition {

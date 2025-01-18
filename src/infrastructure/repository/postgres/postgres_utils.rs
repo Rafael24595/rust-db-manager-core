@@ -1,6 +1,6 @@
 use crate::{
     commons::exception::connect_exception::ConnectException,
-    domain::filter::document_query::DocumentQuery,
+    domain::{e_json_type::EJSONType, filter::document_query::DocumentQuery},
 };
 
 impl DocumentQuery {
@@ -53,5 +53,22 @@ impl DocumentQuery {
             conditions.push(condition);
         }
         Ok(conditions)
+    }
+
+}
+
+pub(crate) fn postgres_to_json_type(postgres_type: &str) -> EJSONType {
+    match postgres_type {
+        "integer" | "bigint" | "smallint" | "serial" | "bigserial" => EJSONType::NUMERIC,
+        "real" | "double precision" | "numeric" => EJSONType::NUMERIC,
+        "boolean" => EJSONType::BOOLEAN,
+        "text" | "varchar" | "char" | "character varying" | "uuid" => EJSONType::STRING,
+        "date" | "timestamp" | "timestamptz" | "time" | "timetz" | "interval" => EJSONType::STRING,
+        "json" | "jsonb" => EJSONType::OBJECT,
+        "bytea" => EJSONType::STRING,
+        ty if ty.ends_with("[]") => EJSONType::ARRAY,
+        "inet" | "cidr" | "macaddr" => EJSONType::STRING,
+        "hstore" => EJSONType::OBJECT,
+        _ => EJSONType::STRING,
     }
 }
