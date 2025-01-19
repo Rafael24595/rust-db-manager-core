@@ -11,14 +11,14 @@ impl DocumentQuery {
 
         //TODO: Review.
         let mut fields = Vec::new();
-        fields.push(String::from("*"));
+        fields.push(String::from("row_to_json(r)"));
 
         let mut conditions = self.make_where_clause()?;
 
         let fields = fields.join(", ");
         sql.push(fields);
 
-        let from = format!("FROM {}", self.collection());
+        let from = format!("FROM {} AS r", self.collection());
         sql.push(from);
 
         if conditions.len() != 0 {

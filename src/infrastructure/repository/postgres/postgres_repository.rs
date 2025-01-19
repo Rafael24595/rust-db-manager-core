@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use serde_json::Value;
 use tokio_postgres::{Client, NoTls};
 use url::Url;
 
 use crate::{
     commons::{configuration::definition::postgres::postgres_collection, exception::connect_exception::ConnectException},
     domain::{
-        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::{self, generate_database_query::GenerateDatabaseQuery}, document::{document_data::DocumentData, document_schema::DocumentSchema}, field::generate::{field_data::FieldData, field_reference::FieldReference}, filter::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema, e_document_format::EDocumentFormat}, field::generate::{field_data::FieldData, field_reference::FieldReference}, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
         }, table::{
             definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
@@ -122,14 +123,36 @@ impl PostgresRepository {
         Ok(client)
     }
 
-    async fn keys(&mut self, query: &CollectionQuery) -> Result<HashMap<String, FieldReference>, ConnectException> {
+    async fn total_documents(&mut self, query: &DocumentQuery) -> Result<i64, ConnectException> {
+        let client = self.connect_table_from_document(query).await?;
+
+        let query = format!("SELECT COUNT(*) FROM {};", query.collection());
+        let rows = client.query(&query, &[]).await;
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        let rows = rows.unwrap();
+        
+        let row = rows.get(0);
+        if row.is_none() {
+            let exception = ConnectException::new_str("Cannot count table documents.");
+            return Err(exception);
+        }
+
+        let row = row.unwrap();
+
+        let count: i64 = row.get(0);
+
+        Ok(count)
+    }
+
+    async fn keys(&mut self, query: &CollectionQuery) -> Result<(Vec<String>, HashMap<String, FieldReference>), ConnectException> {
         let client = self.connect_table_from_collection(query).await?;
         let rows = client.query(
             "SELECT kcu.column_name,
-                    CASE
-                        WHEN tc.constraint_type = 'PRIMARY KEY' THEN 'PRIMARY KEY'
-                        WHEN tc.constraint_type = 'FOREIGN KEY' THEN 'FOREIGN KEY'
-                    END AS key_type,
+                    tc.constraint_type AS key_type,
                     ccu.table_name AS foreign_table,
                     ccu.column_name AS foreign_column
              FROM information_schema.key_column_usage kcu
@@ -146,11 +169,12 @@ impl PostgresRepository {
             return Err(exception);
         }
 
+        let mut primary_keys = Vec::new();
         let mut references = HashMap::new();
 
         for row in rows.unwrap() {
             let column_name: String = row.get("column_name");
-            let _: Option<String> = row.get("key_type"); //TODO: Implement.
+            let key_type: Option<String> = row.get("key_type");
             let foreign_table: Option<String> = row.get("foreign_table");
             let foreign_column: Option<String> = row.get("foreign_column");
 
@@ -164,10 +188,29 @@ impl PostgresRepository {
             let foreign_column = foreign_column.unwrap();
             let reference = FieldReference::new(foreing_table.to_owned(), foreign_column.to_owned());
 
-            references.insert(column_name, reference);
+            let key_type = key_type
+                .unwrap_or(String::new());
+
+            match key_type.as_str() {
+                "PRIMARY KEY" => { primary_keys.push(column_name); },
+                "FOREIGN KEY" => { references.insert(column_name, reference); },
+                _ => {},
+            };
         }
 
-        Ok(references)
+        Ok((primary_keys, references))
+    }
+
+    fn make_document_data(&self, data_base: String, collection: String, document: &Value) -> Result<DocumentData, ConnectException> {
+        let json = serde_json::to_string(&document);
+        if let Err(error) = json {
+            let exception = ConnectException::new(error.to_string());
+            return Err(exception);
+        }
+
+        Ok(DocumentData::new(
+            EDocumentFormat::TABLE, data_base, collection, json.ok().unwrap()
+        ))
     }
 
 }
@@ -392,7 +435,23 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
 
-        todo!()
+        let total = self.total_documents(&query).await?;
+
+        let mut documents = Vec::new();
+        for row in rows.unwrap() {
+            let document: Value = row.get("row_to_json");
+            let data = self.make_document_data(query.data_base(), query.collection(), &document)?;
+            documents.push(data);
+        }
+
+        let data = CollectionData::new(
+            total as usize,
+            query.limit(),
+            query.skip(), 
+            documents
+        );
+
+        Ok(data)
     }
 
     async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
@@ -417,7 +476,7 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
 
-        let keys = keys.unwrap();
+        let (primary_keys, references) = keys.unwrap();
 
         let mut fields = Vec::new();
         for (i, row) in rows.unwrap().iter().enumerate() {
@@ -432,8 +491,8 @@ impl IDBRepository for PostgresRepository {
                 None => 0
             };
 
-            let key = keys.get(&column_name);
-            let reference = match key {
+            let primary_key = primary_keys.contains(&column_name);
+            let reference = match references.get(&column_name) {
                 Some(s) => vec![s.clone()],
                 None => Vec::new()
             };
@@ -444,7 +503,7 @@ impl IDBRepository for PostgresRepository {
                 i as i32, 
                 column_name.to_uppercase(), 
                 column_name, 
-                key.is_some(), 
+                primary_key, 
                 char_max_len.is_some(), 
                 size, 
                 true, 

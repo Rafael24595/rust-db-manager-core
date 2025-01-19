@@ -19,9 +19,13 @@ impl Error for ConnectException {}
 impl ConnectException {
     
     pub fn new(message: String) -> ConnectException {
-        return ConnectException {
+        ConnectException {
             message
-        };
+        }
+    }
+
+    pub fn new_str(message: &str) -> ConnectException {
+        Self::new(String::from(message))
     }
     
     pub fn message(&self) -> String {
