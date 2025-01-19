@@ -8,8 +8,7 @@ use crate::{
         exception::connect_exception::ConnectException,
     },
     domain::{
-        action::definition::action_definition::ActionDefinition,
-        table::group::{e_data_type::EDataType, table_data_group::TableDataGroup},
+        action::definition::action_definition::ActionDefinition, filter::collection_query::CollectionQuery, table::group::{e_data_type::EDataType, table_data_group::TableDataGroup}
     },
 };
 pub(crate) struct ExtractorMetadataPostgres {
@@ -191,32 +190,32 @@ impl ExtractorMetadataPostgres {
         Ok(port.to_string())
     }
 
-    pub(crate) async fn from_collection(client: &Client) -> Result<Vec<TableDataGroup>, ConnectException> {
+    pub(crate) async fn from_data_base(client: &Client) -> Result<Vec<TableDataGroup>, ConnectException> {
         let mut metadata: Vec<TableDataGroup> = Vec::new();
         
-        metadata.push(Self::collection_metadata_general(client).await?);
+        metadata.push(Self::database_metadata_general(client).await?);
 
         Ok(metadata)
     }
 
-    async fn collection_metadata_general(client: &Client) -> Result<TableDataGroup, ConnectException> {
+    async fn database_metadata_general(client: &Client) -> Result<TableDataGroup, ConnectException> {
         let mut group = TableDataGroup::new(0, String::from("general"));
 
         group.push_typed(
             String::from("Size"),
-           Self::collection_all_size(client).await?,
+           Self::data_base_all_size(client).await?,
            EDataType::BYTE
         );
 
         group.push(
             String::from("Schemas"),
-           Self::collection_count_schemas(client).await?
+           Self::data_base_count_schemas(client).await?
         );
 
         Ok(group)
     }
 
-    async fn collection_all_size(client: &Client) -> Result<String, ConnectException> {
+    async fn data_base_all_size(client: &Client) -> Result<String, ConnectException> {
         let row = client.query_one("
             SELECT SUM(pg_total_relation_size(relid)) AS total_size_in_bytes
             FROM pg_catalog.pg_statio_user_tables;", &[]).await;
@@ -235,7 +234,7 @@ impl ExtractorMetadataPostgres {
         Ok(bytes.unwrap().to_string())
     }
 
-    async fn collection_count_schemas(client: &Client) -> Result<String, ConnectException> {
+    async fn data_base_count_schemas(client: &Client) -> Result<String, ConnectException> {
         let row = client.query("
             SELECT schema_name FROM information_schema.schemata;", &[]).await;
         if let Err(err) = row {
@@ -253,6 +252,59 @@ impl ExtractorMetadataPostgres {
         let definition: Vec<ActionDefinition> = serde_json::from_str(&json).expect("Failed to parse JSON");
     
         Ok(definition)
+    }
+
+    pub(crate) async fn from_collection(query: &CollectionQuery, client: &Client) -> Result<Vec<TableDataGroup>, ConnectException> {
+        let mut metadata: Vec<TableDataGroup> = Vec::new();
+        
+        metadata.push(Self::collection_metadata_general(query, client).await?);
+
+        Ok(metadata)
+    }
+
+    async fn collection_metadata_general(query: &CollectionQuery, client: &Client) -> Result<TableDataGroup, ConnectException> {
+        let mut group = TableDataGroup::new(0, String::from("general"));
+
+        let query = format!("
+            SELECT 
+                pg_table_size(oid) AS table_size,
+                pg_total_relation_size(oid) AS total_size,
+                pg_indexes_size(oid) AS index_size
+            FROM pg_class
+            WHERE relkind = 'r'
+            AND relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public' AND relname = '{}')
+            ORDER BY total_size DESC;", query.collection());
+
+        let row = client.query_one(&query, &[]).await;
+        if let Err(err) = row {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        let row = row.unwrap();
+
+        let table_size: i64 = row.get("table_size");
+        group.push_typed(
+            String::from("Table size"),
+            table_size.to_string(),
+           EDataType::BYTE
+        );
+
+        let index_size: i64 = row.get("index_size");
+        group.push_typed(
+            String::from("Index size"),
+            index_size.to_string(),
+           EDataType::BYTE
+        );
+
+        let total_size: i64 = row.get("total_size");
+        group.push_typed(
+            String::from("Size"),
+            total_size.to_string(),
+           EDataType::BYTE
+        );
+
+        Ok(group)
     }
 
 }

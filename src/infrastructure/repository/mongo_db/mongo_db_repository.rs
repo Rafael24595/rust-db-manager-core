@@ -299,7 +299,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(definition)
     }
 
-    async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
+    async fn collection_metadata(&mut self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let document = self.collections_metadata_document(query.data_base(), query.collection()).await?;
         ExtractorMetadataMongoDb::from_collection(document)
     }
@@ -454,7 +454,7 @@ impl IDBRepository for MongoDbRepository {
         let comments = Vec::from(vec![
             String::from("If '_id' field is not defined it will be created with an ObjectId default value.")
         ]);
-        Ok(DocumentSchema::new(comments, false, definition))
+        Ok(DocumentSchema::new(comments, false, false, definition))
     }
 
     async fn insert(&self, query: &CollectionQuery, value: &str) -> Result<DocumentData, ConnectException> {

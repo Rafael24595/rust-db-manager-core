@@ -61,7 +61,7 @@ impl Service {
         return self.repository.collection_accept_schema().await;
     }
 
-    pub async fn collection_metadata(&self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
+    pub async fn collection_metadata(&mut self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.collection_metadata(query).await;
     }
 

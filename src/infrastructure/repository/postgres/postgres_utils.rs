@@ -25,6 +25,16 @@ impl DocumentQuery {
             sql.append(&mut conditions);
         }
 
+        if let Some(limit) = self.limit() {
+            let limit = format!("LIMIT {}", limit);
+            sql.push(limit);
+        }
+
+        if let Some(skip) = self.skip() {
+            let skip = format!("OFFSET {}", skip);
+            sql.push(skip);
+        }
+
         //TODO: Add sort logic.
 
         Ok(format!("{};", sql.join(" ")))

@@ -234,7 +234,7 @@ impl IDBRepository for PostgresRepository {
         query: &DataBaseQuery,
     ) -> Result<Vec<TableDataGroup>, ConnectException> {
         let client = self.connect_table_from_db(query).await?;
-        ExtractorMetadataPostgres::from_collection(client).await
+        ExtractorMetadataPostgres::from_data_base(client).await
     }
 
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException> {
@@ -313,10 +313,11 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn collection_metadata(
-        &self,
+        &mut self,
         query: &CollectionQuery,
     ) -> Result<Vec<TableDataGroup>, ConnectException> {
-        todo!()
+        let client = self.connect_table_from_collection(query).await?;
+        ExtractorMetadataPostgres::from_collection(query, client).await
     }
 
     async fn collection_information(
@@ -515,7 +516,7 @@ impl IDBRepository for PostgresRepository {
             fields.push(field);
         }
 
-        let schema = DocumentSchema::new(Vec::new(), true, fields);
+        let schema = DocumentSchema::new(Vec::new(), true, true, fields);
 
         Ok(schema)
     }
