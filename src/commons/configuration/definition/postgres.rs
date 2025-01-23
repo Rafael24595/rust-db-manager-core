@@ -287,8 +287,47 @@ pub fn postgres_collection() -> String {
                     "size": 0,
                     "mutable": false,
                     "json_type": "NUMERIC",
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "key": "NOT_NULL",
+                            "value": "false"
+                        },
+                        {
+                            "key": "UNIQUE",
+                            "value": "false"
+                        }
+                    ],
                     "reference": []
+                }
+            ],
+            "global_attributes": [
+                {
+                    "name": "Not null",
+                    "code": "NOT_NULL",
+                    "values": [
+                        {
+                            "key": "True",
+                            "value": "true"
+                        },
+                        {
+                            "key": "False",
+                            "value": "false"
+                        }
+                    ]
+                },
+                {
+                    "name": "Unique",
+                    "code": "UNIQUE",
+                    "values": [
+                        {
+                            "key": "True",
+                            "value": "true"
+                        },
+                        {
+                            "key": "False",
+                            "value": "false"
+                        }
+                    ]
                 }
             ]
         }

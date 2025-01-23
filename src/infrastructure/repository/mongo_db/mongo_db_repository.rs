@@ -355,7 +355,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(collections.iter().any(|document| &document.collection() == &query.collection()))
     }
 
-    async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
+    async fn collection_create(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         let name = query.collection();
         let db = self.data_base(&query.data_base());
         let result = db.create_collection(&name, None).await;

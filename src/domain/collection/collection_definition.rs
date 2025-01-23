@@ -1,19 +1,20 @@
 use serde::Deserialize;
 
-use crate::domain::field::{definition::field_definition::FieldDefinition, generate::field_data::FieldData};
+use crate::domain::field::{definition::{field_attribute_definition::FieldAttributeDefinition, field_definition::FieldDefinition}, generate::field_data::FieldData};
 
 #[derive(Clone, Deserialize)]
 pub struct CollectionDefinition {
     swrelational: bool,
     definition: Vec<FieldDefinition>,
-    defaults: Vec<FieldData>
+    defaults: Vec<FieldData>,
+    global_attributes: Vec<FieldAttributeDefinition>
 }
 
 impl CollectionDefinition {
     
-    pub fn new(swrelational: bool, definition: Vec<FieldDefinition>, defaults: Vec<FieldData>) -> Self {
+    pub fn new(swrelational: bool, definition: Vec<FieldDefinition>, defaults: Vec<FieldData>, global_attributes: Vec<FieldAttributeDefinition>) -> Self {
         Self {
-            swrelational, definition, defaults
+            swrelational, definition, defaults, global_attributes
         }
     }
 
@@ -27,6 +28,10 @@ impl CollectionDefinition {
 
     pub fn defaults(&self) -> Vec<FieldData> {
         self.defaults.clone()
+    }
+
+    pub fn global_attributes(&self) -> &Vec<FieldAttributeDefinition> {
+        &self.global_attributes
     }
 
 }

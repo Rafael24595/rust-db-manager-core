@@ -85,7 +85,7 @@ impl Service {
         return self.repository.collection_exists(query).await;
     }
 
-    pub async fn collection_create(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
+    pub async fn collection_create(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         return self.repository.collection_create(query).await;
     }
 

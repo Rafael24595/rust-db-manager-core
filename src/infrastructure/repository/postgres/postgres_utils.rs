@@ -1,6 +1,6 @@
 use crate::{
     commons::exception::connect_exception::ConnectException,
-    domain::{e_json_type::EJSONType, filter::document_query::DocumentQuery},
+    domain::{collection::generate_collection_query::GenerateCollectionQuery, e_json_type::EJSONType, filter::document_query::DocumentQuery},
 };
 
 impl DocumentQuery {
@@ -63,6 +63,61 @@ impl DocumentQuery {
             conditions.push(condition);
         }
         Ok(conditions)
+    }
+
+}
+
+impl GenerateCollectionQuery {
+    
+    pub fn to_postgres_query(&self) -> String {
+        let mut buffer = Vec::new();
+
+        let header = format!("CREATE TABLE {} (", self.collection());
+        buffer.push(header);
+
+        let mut buffer_fields = Vec::new();
+        for field in self.fields() {
+            let name = field.value();
+            let field_type = field.code();
+
+            let mut size_status = String::new();
+            if field.is_resize() {
+                size_status = format!("({})", field.size());
+            }
+
+            let mut not_null_status = String::new();
+            let attribute = field.attributes().iter()
+                .find(|a| a.key() == "NOT_NULL")
+                .map(|a| a.value().parse::<bool>().unwrap_or(false))
+                .unwrap_or(false);
+            if !attribute {
+                not_null_status = String::from("NOT NULL");
+            }
+
+            let mut key_status = String::new();
+            if field.is_key() {
+                key_status = String::from("PRIMARY KEY");
+            }
+
+            let mut unique_status = String::new();
+            let attribute = field.attributes().iter()
+                .find(|a| a.key() == "UNIQUE")
+                .map(|a| a.value().parse::<bool>().unwrap_or(false))
+                .unwrap_or(false);
+            if !field.is_key()  && attribute {
+                unique_status = String::from("UNIQUE");
+            }
+
+            let field_sentence = format!("{} {}{} {} {} {}", name, field_type, size_status, not_null_status, key_status, unique_status);
+
+            buffer_fields.push(field_sentence);
+        }
+
+        buffer.push(buffer_fields.join(", "));
+
+        buffer.push(String::from(");"));
+
+        buffer.join("")
     }
 
 }

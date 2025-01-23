@@ -382,10 +382,20 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn collection_create(
-        &self,
+        &mut self,
         query: &GenerateCollectionQuery,
     ) -> Result<String, ConnectException> {
-        todo!()
+        let client =  self.connect_table(&query.data_base()).await?;
+
+        let create_collection_query = query.to_postgres_query();
+
+        let result = client.batch_execute(&create_collection_query).await;
+        if let Err(result) = result {
+            let exception = ConnectException::new(result.to_string());
+            return Err(exception);
+        }
+
+        Ok(query.collection())
     }
 
     async fn collection_drop(
