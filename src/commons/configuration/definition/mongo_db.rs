@@ -68,7 +68,8 @@ pub fn mongo_db_collection() -> String {
                     "reference": []
                 }
             ],
-            "global_attributes": []
+            "global_attributes": [],
+            "references": []
         }
     ).to_string()
 }

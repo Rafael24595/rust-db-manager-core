@@ -52,6 +52,7 @@ pub mod domain {
     pub mod collection {
         pub mod collection_data;
         pub mod collection_definition;
+        pub mod collections_reference_definition;
         pub mod generate_collection_query;
     }
     pub mod data_base {

@@ -329,7 +329,8 @@ pub fn postgres_collection() -> String {
                         }
                     ]
                 }
-            ]
+            ],
+            "references": []
         }
     ).to_string()
 }

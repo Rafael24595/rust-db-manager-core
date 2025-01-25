@@ -10,7 +10,7 @@ pub struct FieldDefinition {
     swkey: bool,
     swsize: bool,
     multiple: bool,
-    attributes: Vec<FieldAttributeDefinition>
+    attributes: Vec<FieldAttributeDefinition>,
 }
 
 impl FieldDefinition {
@@ -47,8 +47,8 @@ impl FieldDefinition {
         self.multiple
     }
 
-    pub fn attributes(&self) -> Vec<FieldAttributeDefinition> {
-        self.attributes.clone()
+    pub fn attributes(&self) -> &Vec<FieldAttributeDefinition> {
+        &self.attributes
     }
 
 }
