@@ -37,6 +37,10 @@ impl Service {
         return self.repository.metadata().await;
     }
 
+    pub async fn data_base_schema(&mut self, query: &DataBaseQuery) -> Result<CollectionDefinition, ConnectException> {
+        return self.repository.data_base_schema(query).await;
+    }
+
     pub async fn data_base_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException> {
         return self.repository.data_base_exists(query).await;
     }
@@ -55,10 +59,6 @@ impl Service {
 
     pub async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         return self.repository.data_base_metadata(query).await;
-    }
-
-    pub async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {
-        return self.repository.collection_accept_schema().await;
     }
 
     pub async fn collection_metadata(&mut self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {

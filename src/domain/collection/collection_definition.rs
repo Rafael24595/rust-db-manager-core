@@ -41,4 +41,9 @@ impl CollectionDefinition {
         &self.references
     }
 
+    pub fn push_references(&mut self, mut references: Vec<CollectionReferenceDefinition>) -> &Self {
+        self.references.append(&mut references);
+        self
+    }
+
 }

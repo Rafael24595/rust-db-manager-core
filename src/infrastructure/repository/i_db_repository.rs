@@ -17,14 +17,14 @@ use crate::{
 pub trait IDBRepository: Send + Sync {
     async fn status(&self) -> Result<(), ConnectException>;
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException>;
-
+    
+    async fn data_base_schema(&mut self, query: &DataBaseQuery) -> Result<CollectionDefinition, ConnectException>;
     async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
     async fn data_base_find_all(&self) -> Result<Vec<String>, ConnectException>;
     async fn data_base_exists(&self, query: &DataBaseQuery) -> Result<bool, ConnectException>;
     async fn data_base_create(&mut self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
     async fn data_base_drop(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException>;
 
-    async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException>;
     async fn collection_metadata(&mut self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException>;
     async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException>;
     async fn collection_actions(&mut self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException>;

@@ -8,10 +8,10 @@ use url::Url;
 use crate::{
     commons::{configuration::definition::postgres::postgres_collection, exception::connect_exception::ConnectException},
     domain::{
-        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema, e_document_format::EDocumentFormat}, field::generate::{field_data::FieldData, field_reference::FieldReference}, filter::{
+        action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, collections_reference_definition::CollectionReferenceDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema, e_document_format::EDocumentFormat}, field::generate::{field_data::FieldData, field_reference::FieldReference}, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
         }, table::{
-            definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup,
+            definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup
         }
     },
     infrastructure::repository::{i_db_repository::IDBRepository, postgres::postgres_utils::postgres_to_json_type},
@@ -229,6 +229,49 @@ impl IDBRepository for PostgresRepository {
         ExtractorMetadataPostgres::from_db(&self.client_general).await
     }
 
+    async fn data_base_schema(&mut self, query: &DataBaseQuery) -> Result<CollectionDefinition, ConnectException> {
+        let json = postgres_collection();
+        let mut definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
+
+        let client = self.connect_table_from_db(query).await?;
+
+        let query = "
+            SELECT 
+                table_name, 
+                column_name 
+            FROM 
+                information_schema.columns
+            WHERE 
+                table_schema = 'public'
+            ORDER BY 
+                table_name, ordinal_position;";
+
+        let rows = client.query(query, &[]).await;
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+        
+        let rows = rows.unwrap();
+
+        let mut tables = HashMap::new();
+
+        for row in rows {
+            let table_name: &str = row.get("table_name");
+            let column_name: &str = row.get("column_name");
+
+            let files = tables.entry(table_name.to_string())
+                .or_insert_with(|| CollectionReferenceDefinition::new(table_name.to_string(), Vec::new()));
+            files.push(column_name);
+        }
+
+        let tables = tables.values().cloned().collect();
+
+        definition.push_references(tables);
+
+        Ok(definition)
+    }
+
     async fn data_base_metadata(
         &mut self,
         query: &DataBaseQuery,
@@ -304,12 +347,6 @@ impl IDBRepository for PostgresRepository {
         }
 
         Ok(data_base)
-    }
-
-    async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {
-        let json = postgres_collection();
-        let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
-        Ok(definition)
     }
 
     async fn collection_metadata(

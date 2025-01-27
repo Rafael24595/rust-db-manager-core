@@ -22,4 +22,9 @@ impl CollectionReferenceDefinition {
         &self.fields
     }
 
+    pub fn push(&mut self, field: &str) -> &Self {
+        self.fields.push(field.to_string());
+        self
+    }
+
 }

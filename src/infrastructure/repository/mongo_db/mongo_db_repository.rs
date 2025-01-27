@@ -225,6 +225,12 @@ impl IDBRepository for MongoDbRepository {
         return Ok(());
     }
 
+    async fn data_base_schema(&mut self, query: &DataBaseQuery) -> Result<CollectionDefinition, ConnectException> {        
+        let json = mongo_db_collection();
+        let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
+        Ok(definition)
+    }
+
     async fn metadata(&self) -> Result<Vec<TableDataGroup>, ConnectException> {
         let server_info = &self.client.database("admin")
             .run_command(doc! {"serverStatus": 1}, None).await;
@@ -291,12 +297,6 @@ impl IDBRepository for MongoDbRepository {
             documents.push(document);
         }
         ExtractorMetadataMongoDb::from_collections(documents)
-    }
-
-    async fn collection_accept_schema(&self) -> Result<CollectionDefinition, ConnectException> {        
-        let json = mongo_db_collection();
-        let definition: CollectionDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
-        Ok(definition)
     }
 
     async fn collection_metadata(&mut self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
