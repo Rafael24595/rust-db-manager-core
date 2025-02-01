@@ -46,7 +46,7 @@ impl DocumentQuery {
             return Ok(Vec::new());
         }
 
-        let filter = filter.unwrap();
+        let filter = filter.as_ref().unwrap();
 
         let mut conditions = Vec::new();
         for (i, field) in filter.value().children().iter().enumerate() {
@@ -76,6 +76,7 @@ impl GenerateCollectionQuery {
         buffer.push(header);
 
         let mut buffer_fields = Vec::new();
+        let mut buffer_fks = Vec::new();
         for field in self.fields() {
             let name = field.value();
             let field_type = field.code();
@@ -111,10 +112,21 @@ impl GenerateCollectionQuery {
             let field_sentence = format!("{} {}{} {} {} {}", name, field_type, size_status, not_null_status, key_status, unique_status);
 
             buffer_fields.push(field_sentence);
+
+            if field.reference().len() > 0 {
+                let reference = &field.reference()[0];
+                let collection = reference.collection();
+                let field = reference.field();
+                let cascade_status = reference.cascade();
+
+                let key_sentence = format!("FOREIGN KEY  ({}) REFERENCES {}({}) {}", name, collection, field, cascade_status);
+
+                buffer_fks.push(key_sentence);
+            }
         }
 
         buffer.push(buffer_fields.join(", "));
-
+        buffer.push(buffer_fks.join(", "));
         buffer.push(String::from(");"));
 
         buffer.join("")
