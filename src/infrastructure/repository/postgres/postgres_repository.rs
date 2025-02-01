@@ -182,11 +182,9 @@ impl PostgresRepository {
                 continue;
             }
 
-            let column_name = column_name.clone();
-
             let foreing_table = foreign_table.unwrap();
             let foreign_column = foreign_column.unwrap();
-            let reference = FieldReference::new(foreing_table.to_owned(), foreign_column.to_owned());
+            let reference = FieldReference::new(foreing_table.to_owned(), foreign_column.to_owned(), true);
 
             let key_type = key_type
                 .unwrap_or(String::new());
@@ -201,7 +199,7 @@ impl PostgresRepository {
         Ok((primary_keys, references))
     }
 
-    fn make_document_data(&self, data_base: String, collection: String, document: &Value) -> Result<DocumentData, ConnectException> {
+    fn make_document_data(&self, data_base: &str, collection: &str, document: &Value) -> Result<DocumentData, ConnectException> {
         let json = serde_json::to_string(&document);
         if let Err(error) = json {
             let exception = ConnectException::new(error.to_string());
@@ -209,7 +207,7 @@ impl PostgresRepository {
         }
 
         Ok(DocumentData::new(
-            EDocumentFormat::TABLE, data_base, collection, json.ok().unwrap()
+            EDocumentFormat::TABLE, data_base.to_string(), collection.to_string(), json.ok().unwrap()
         ))
     }
 
@@ -261,7 +259,7 @@ impl IDBRepository for PostgresRepository {
             let column_name: &str = row.get("column_name");
 
             let files = tables.entry(table_name.to_string())
-                .or_insert_with(|| CollectionReferenceDefinition::new(table_name.to_string(), Vec::new()));
+                .or_insert_with(|| CollectionReferenceDefinition::new(table_name.to_string(), Vec::new(), true));
             files.push(column_name);
         }
 
@@ -330,7 +328,7 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
 
-        Ok(data_base)
+        Ok(data_base.to_string())
     }
 
     async fn data_base_drop(
@@ -346,7 +344,7 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
 
-        Ok(data_base)
+        Ok(data_base.to_string())
     }
 
     async fn collection_metadata(
@@ -432,7 +430,7 @@ impl IDBRepository for PostgresRepository {
             return Err(exception);
         }
 
-        Ok(query.collection())
+        Ok(query.collection().to_string())
     }
 
     async fn collection_drop(

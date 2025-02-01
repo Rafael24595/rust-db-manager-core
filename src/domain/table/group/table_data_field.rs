@@ -29,20 +29,20 @@ impl TableDataField {
         self.order
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn value(&self) -> String {
-        self.value.clone()
+    pub fn value(&self) -> &str {
+        &self.value
     }
 
-    pub fn data_type(&self) -> EDataType {
-        self.data_type.clone()
+    pub fn data_type(&self) -> &EDataType {
+        &self.data_type
     }
     
-    pub fn json_type(&self) -> String {
-        self.json_type.clone()
+    pub fn json_type(&self) -> &str {
+        &self.json_type
     }
 
 }

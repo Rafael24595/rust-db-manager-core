@@ -16,20 +16,20 @@ impl DocumentData {
         }
     }
 
-    pub fn format(&self) -> EDocumentFormat {
-        self.format.clone()
+    pub fn format(&self) -> &EDocumentFormat {
+        &self.format
     }
 
-    pub fn data_base(&self) -> String {
-        self.data_base.clone()
+    pub fn data_base(&self) -> &str {
+        &self.data_base
     }
 
-    pub fn collection(&self) -> String {
-        self.collection.clone()
+    pub fn collection(&self) -> &str {
+        &self.collection
     }
 
-    pub fn document(&self) -> String {
-        self.document.clone()
+    pub fn document(&self) -> &str {
+        &self.document
     }
 
 }

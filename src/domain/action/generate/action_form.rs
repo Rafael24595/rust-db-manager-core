@@ -15,12 +15,12 @@ impl ActionForm {
         }
     }
 
-    pub fn code(&self) -> String {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn fields(&self) -> Vec<Vec<FormField>> {
-        self.fields.clone()
+    pub fn fields(&self) -> &Vec<Vec<FormField>> {
+        &self.fields
     }
 
     pub fn find_fields(&self, code: String) -> Vec<&FormField> {

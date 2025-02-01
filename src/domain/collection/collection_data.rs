@@ -27,8 +27,8 @@ impl CollectionData {
         self.offset
     }
 
-    pub fn documents(&self) -> Vec<DocumentData> {
-        self.documents.clone()
+    pub fn documents(&self) -> &Vec<DocumentData> {
+        &self.documents
     }
 
 }

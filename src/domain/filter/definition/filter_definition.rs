@@ -11,16 +11,16 @@ pub struct FilterDefinition {
 
 impl FilterDefinition {
 
-    pub fn query_type(&self) -> String {
-        self.query_type.clone()
+    pub fn query_type(&self) -> &str {
+        &self.query_type
     }
 
-    pub fn query_example(&self) -> String {
-        self.query_example.clone()
+    pub fn query_example(&self) -> &str {
+        &self.query_example
     }
 
-    pub fn attributes(&self) -> Vec<FilterAttributeDefinition> {
-        self.attributes.clone()
+    pub fn attributes(&self) -> &Vec<FilterAttributeDefinition> {
+        &self.attributes
     }
 
 }

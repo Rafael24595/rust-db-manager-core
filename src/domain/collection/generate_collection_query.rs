@@ -33,16 +33,16 @@ impl GenerateCollectionQuery {
         }
     }
 
-    pub fn data_base(&self) -> String {
-        return self.data_base.clone();
+    pub fn data_base(&self) -> &str {
+        &self.data_base
     }
 
-    pub fn collection(&self) -> String {
-        return self.collection.clone();
+    pub fn collection(&self) -> &str {
+        &self.collection
     }
 
-    pub fn fields(&self) -> Vec<FieldData> {
-        return self.fields.clone();
+    pub fn fields(&self) -> &Vec<FieldData> {
+        &self.fields
     }
 
 }

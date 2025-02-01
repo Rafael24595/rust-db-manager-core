@@ -15,7 +15,7 @@ pub const FORM_INDEXED: &str = "INDEXED";
 pub const FIELD_INDEXED: &str = "INDEXED";
 
 pub(crate) async  fn execute_collection_action(collection: Collection<Document>, action: &Action) -> Result<String, ConnectException> {
-    match action.action().as_str() {
+    match action.action() {
         ACTION_INDEXES_NEW => create_indexes(collection, action).await,
         ACTION_INDEXES_DELETE => delete_indexes(collection, action).await,
         _ => Err(ConnectException::new(String::from("Action not recognized.")))
@@ -77,7 +77,7 @@ async fn create_indexes_options(action: &Action) -> Result<IndexOptions, Connect
 
     let mut name = None;
     if let Some(values) = form_attributes.find_fields(String::from(FIELD_NAME)).first() {
-        name = Some(values.value());
+        name = Some(values.value().to_string());
     }
 
     let mut unique = true;
@@ -103,8 +103,8 @@ async fn delete_indexes(collection: Collection<Document>, action: &Action) -> Re
     for index in indexes {
         let value = index.value();
 
-        if let Err(error) = collection.drop_index(value.clone(), None).await {
-            errors.push(value + ": " + &error.to_string());
+        if let Err(error) = collection.drop_index(value, None).await {
+            errors.push(format!("{}: {}", value, error.to_string()));
         }
     }
 

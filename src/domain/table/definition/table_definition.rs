@@ -17,12 +17,12 @@ impl TableDefinition {
         }
     }
 
-    pub fn title(&self) -> String {
-        self.title.clone()
+    pub fn title(&self) -> &str {
+        &self.title
     }
 
-    pub fn rows(&self) -> Vec<TableRowDefinition> {
-        self.rows.clone()
+    pub fn rows(&self) -> &Vec<TableRowDefinition> {
+        &self.rows
     }
 
     pub fn push(& mut self, row: TableRowDefinition) -> &Self {

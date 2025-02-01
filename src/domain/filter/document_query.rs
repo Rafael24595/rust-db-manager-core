@@ -17,7 +17,7 @@ impl DocumentQuery {
     }
     
     pub fn from_query_unpaginated(query: &DocumentQuery) -> Self {
-        Self::from(query.data_base(), query.collection(), None, None, query.filter())
+        Self::from(query.data_base().to_string(), query.collection().to_string(), None, None, query.filter().clone())
     }
 
     pub fn from(data_base: String, collection: String, skip: Option<usize>, limit: Option<usize>, filter: Option<FilterElement>) -> Self {
@@ -30,24 +30,24 @@ impl DocumentQuery {
         }
     }
 
-    pub fn data_base(&self) -> String {
-        return self.data_base.clone();
+    pub fn data_base(&self) -> &str {
+        &self.data_base
     }
 
-    pub fn collection(&self) -> String {
-        return self.collection.clone();
+    pub fn collection(&self) -> &str {
+        &self.collection
     }
 
     pub fn skip(&self) -> Option<usize> {
-        return self.skip;
+        self.skip
     }
 
     pub fn limit(&self) -> Option<usize> {
-        return self.limit;
+        self.limit
     }
 
-    pub fn filter(&self) -> Option<FilterElement> {
-        return self.filter.clone();
+    pub fn filter(&self) -> &Option<FilterElement> {
+        &self.filter
     }
 
 }

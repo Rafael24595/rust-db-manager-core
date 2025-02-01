@@ -81,20 +81,20 @@ impl FilterValue {
         };
     }
 
-    pub fn category(&self) -> EFilterCategory {
-        return self.category.clone();
+    pub fn category(&self) -> &EFilterCategory {
+        &self.category
     }
 
-    pub fn value(&self) -> String {
-        return self.value.clone();
+    pub fn value(&self) -> &str {
+        &self.value
     }
 
-    pub fn attributes(&self) -> Vec<FilterValueAttribute> {
-        return self.attributes.clone();
+    pub fn attributes(&self) -> &Vec<FilterValueAttribute> {
+        &self.attributes
     }
 
-    pub fn children(&self) -> Vec<FilterElement> {
-        return self.children.clone();
+    pub fn children(&self) -> &Vec<FilterElement> {
+        &self.children
     }
 
 }

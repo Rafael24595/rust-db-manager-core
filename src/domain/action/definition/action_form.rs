@@ -21,20 +21,20 @@ impl ActionForm {
         }
     }
 
-    pub fn code(&self) -> String {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn title(&self) -> Option<String> {
-        self.title.clone()
+    pub fn title(&self) -> &Option<String> {
+        &self.title
     }
 
     pub fn is_vector(&self) -> bool {
         self.sw_vector
     }
 
-    pub fn fields(&self) -> Vec<FormFieldDefinition> {
-        self.fields.clone()
+    pub fn fields(&self) -> &Vec<FormFieldDefinition> {
+        &self.fields
     }
 
     pub fn push(& mut self, field: FormFieldDefinition) -> &Self {

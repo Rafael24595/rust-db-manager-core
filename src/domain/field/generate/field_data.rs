@@ -61,12 +61,12 @@ impl FieldData {
         &self.json_type
     }
 
-    pub fn attributes(&self) -> Vec<FieldAttribute> {
-        self.attributes.clone()
+    pub fn attributes(&self) -> &Vec<FieldAttribute> {
+        &self.attributes
     }
 
-    pub fn reference(&self) -> Vec<FieldReference> {
-        self.reference.clone()
+    pub fn reference(&self) -> &Vec<FieldReference> {
+        &self.reference
     }
 
 }

@@ -23,20 +23,20 @@ impl FormFieldDefinition {
         self.order
     }
     
-    pub fn code(&self) -> String {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn is_key(&self) -> bool {
         self.sw_key
     }
 
-    pub fn values(&self) -> Vec<FormDefault> {
-        self.values.clone()
+    pub fn values(&self) -> &Vec<FormDefault> {
+        &self.values
     }
 
 }

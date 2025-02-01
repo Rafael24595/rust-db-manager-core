@@ -15,8 +15,8 @@ impl DocumentSchema {
         }
     }
 
-    pub fn comments(&self) -> Vec<String> {
-        self.comments.clone()
+    pub fn comments(&self) -> &Vec<String> {
+        &self.comments
     }
 
     pub fn is_relational(&self) -> bool {
@@ -27,8 +27,8 @@ impl DocumentSchema {
         self.sw_strict
     }
 
-    pub fn fields(&self) -> Vec<FieldData> {
-        self.fields.clone()
+    pub fn fields(&self) -> &Vec<FieldData> {
+        &self.fields
     }
 
 }

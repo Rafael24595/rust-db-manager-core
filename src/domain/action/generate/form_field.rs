@@ -12,12 +12,12 @@ impl FormField {
         }
     }
 
-    pub fn code(&self) -> String {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn value(&self) -> String {
-        self.value.clone()
+    pub fn value(&self) -> &str {
+        &self.value
     }
 
 }

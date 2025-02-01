@@ -15,16 +15,16 @@ impl DBServiceLite {
         }
     }
     
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn is_protected(&self) -> bool {
         self.protected
     }
 
-    pub fn category(&self) -> EDBRepository {
-        self.category.clone()
+    pub fn category(&self) -> &EDBRepository {
+        &self.category
     }
 
 }

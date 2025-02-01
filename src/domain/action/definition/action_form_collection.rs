@@ -21,8 +21,8 @@ impl ActionFormCollection {
         self.sw_query
     }
 
-    pub fn forms(&self) -> Vec<ActionForm> {
-        self.forms.clone()
+    pub fn forms(&self) -> &Vec<ActionForm> {
+        &self.forms
     }
 
     pub fn push(& mut self, form: ActionForm) -> &Self {

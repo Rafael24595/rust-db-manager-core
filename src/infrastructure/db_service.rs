@@ -75,15 +75,15 @@ impl DBService {
         Ok(())
     }
     
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn owner(&self) -> String {
-        self.owner.clone()
+    pub fn owner(&self) -> &str {
+        &self.owner
     }
 
-    pub fn category(&self) -> EDBRepository {
+    pub fn category(&self) -> &EDBRepository {
         self.connection_data.category()
     }
 
@@ -91,16 +91,16 @@ impl DBService {
         self.protected
     }
 
-    pub fn salt(&self) -> String {
-        self.salt.clone()
+    pub fn salt(&self) -> &str {
+        &self.salt
     }
 
     pub fn timestamp(&self) -> u128 {
         self.timestamp
     }
 
-    pub fn connection_data(&self) -> ConnectionData {
-        self.connection_data.clone()
+    pub fn connection_data(&self) -> &ConnectionData {
+        &self.connection_data
     }
 
     pub fn is_same(&self, other: DBService) -> bool {

@@ -28,8 +28,8 @@ impl ConnectException {
         Self::new(String::from(message))
     }
     
-    pub fn message(&self) -> String {
-        return self.message.clone();
+    pub fn message(&self) -> &str {
+        &self.message
     }
 
 }

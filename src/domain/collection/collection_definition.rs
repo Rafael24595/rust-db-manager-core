@@ -25,12 +25,12 @@ impl CollectionDefinition {
         self.swrelational
     }
 
-    pub fn definition(&self) -> Vec<FieldDefinition> {
-        self.definition.clone()
+    pub fn definition(&self) -> &Vec<FieldDefinition> {
+        &self.definition
     }
 
-    pub fn defaults(&self) -> Vec<FieldData> {
-        self.defaults.clone()
+    pub fn defaults(&self) -> &Vec<FieldData> {
+        &self.defaults
     }
 
     pub fn global_attributes(&self) -> &Vec<FieldAttributeDefinition> {

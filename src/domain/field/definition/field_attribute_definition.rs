@@ -17,16 +17,16 @@ impl FieldAttributeDefinition {
         }
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn code(&self) -> String {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn values(&self) -> Vec<FieldAttributeDefaultDefinition> {
-        self.values.clone()
+    pub fn values(&self) -> &Vec<FieldAttributeDefaultDefinition> {
+        &self.values
     }
 
 }

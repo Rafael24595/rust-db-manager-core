@@ -14,12 +14,12 @@ impl FieldAttributeDefaultDefinition {
         }
     }
 
-    pub fn key(&self) -> String {
-        self.key.clone()
+    pub fn key(&self) -> &str {
+        &self.key
     }
 
-    pub fn value(&self) -> String {
-        self.value.clone()
+    pub fn value(&self) -> &str {
+        &self.value
     }
 
 }

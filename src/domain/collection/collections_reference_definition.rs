@@ -4,18 +4,19 @@ use serde::Deserialize;
 pub struct CollectionReferenceDefinition {
     collection: String,
     fields: Vec<String>,
+    cascade: bool
 }
 
 impl CollectionReferenceDefinition {
     
-    pub fn new(collection: String, fields: Vec<String>) -> Self {
+    pub fn new(collection: String, fields: Vec<String>, cascade: bool) -> Self {
         Self {
-            collection, fields
+            collection, fields, cascade
         }
     }
 
-    pub fn collection(&self) -> String {
-        self.collection.clone()
+    pub fn collection(&self) -> &str {
+        &self.collection
     }
 
     pub fn fields(&self) -> &Vec<String> {
@@ -25,6 +26,10 @@ impl CollectionReferenceDefinition {
     pub fn push(&mut self, field: &str) -> &Self {
         self.fields.push(field.to_string());
         self
+    }
+
+    pub fn cascade(&self) -> bool {
+        self.cascade
     }
 
 }

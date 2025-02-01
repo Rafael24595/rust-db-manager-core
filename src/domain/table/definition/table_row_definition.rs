@@ -15,8 +15,8 @@ impl TableRowDefinition {
         }
     }
 
-    pub fn fields(&self) -> Vec<TableFieldDefinition>{
-        self.fields.clone()
+    pub fn fields(&self) -> &Vec<TableFieldDefinition>{
+        &self.fields
     }
 
     pub fn push_title(& mut self, value: String) -> &Self {

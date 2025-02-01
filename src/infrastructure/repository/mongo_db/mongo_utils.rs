@@ -66,7 +66,7 @@ impl FilterElement {
         let result = f_value.as_mongo_agregate(&field, registry);
         let value = result.0;
         registry = result.1;
-        field = result.2;
+        field = &result.2;
 
         match f_value.category() {
             EFilterCategory::ROOT => registry,
@@ -113,7 +113,7 @@ impl FilterElement {
         return registry;    
     }
 
-    fn make_base(&self, mut registry: QueryItems, field: String, value: Bson) -> QueryItems {
+    fn make_base(&self, mut registry: QueryItems, field: &str, value: Bson) -> QueryItems {
         let query;
         if self.is_negate() {
             query = doc! {
@@ -140,7 +140,7 @@ impl FilterElement {
 
 impl FilterValue {
  
-    pub fn as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
+    pub fn as_mongo_agregate(&self, field: &str, registry: QueryItems) -> (Bson, QueryItems, String) {
         match self.category() {
             EFilterCategory::ID_NUMERIC | EFilterCategory::ID_STRING => self.id_as_mongo_agregate(field, registry),
             EFilterCategory::QUERY => self.query_as_mongo_agregate(field, registry),
@@ -152,9 +152,9 @@ impl FilterValue {
         }
     }
 
-    pub fn id_as_mongo_agregate(&self, field: &String, mut registry: QueryItems) -> (Bson, QueryItems, String) {
+    pub fn id_as_mongo_agregate(&self, field: &str, mut registry: QueryItems) -> (Bson, QueryItems, String) {
         let attributes = self.attributes();
-        let mut value = Bson::String(self.value());
+        let mut value = Bson::String(self.value().to_string());
         
         let mut field_fix = field.to_string();
 
@@ -183,7 +183,7 @@ impl FilterValue {
         (value, registry, field_fix)
     }
 
-    pub fn query_as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
+    pub fn query_as_mongo_agregate(&self, field: &str, registry: QueryItems) -> (Bson, QueryItems, String) {
         let value = self.value();
         let pipeline: Result<Vec<Document>, serde_json::Error> = from_str(&value);
         //TODO: Error
@@ -191,9 +191,9 @@ impl FilterValue {
         (Bson::Array(array), registry, field.to_owned())
     }
 
-    pub fn string_as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
+    pub fn string_as_mongo_agregate(&self, field: &str, registry: QueryItems) -> (Bson, QueryItems, String) {
         let attributes = self.attributes();
-        let mut value = Bson::String(self.value());
+        let mut value = Bson::String(self.value().to_string());
 
         let o_regex = attributes.iter().find(|a| a.key() == EFilterAtributtes::REGEX.to_string());
         if let Some(s_regex) = o_regex {
@@ -206,33 +206,33 @@ impl FilterValue {
         (value, registry, field.to_owned())
     }
 
-    pub fn boolean_as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
+    pub fn boolean_as_mongo_agregate(&self, field: &str, registry: QueryItems) -> (Bson, QueryItems, String) {
         let value = self.value();
         let boolean = value.parse::<bool>();
         //TODO: Error
         (Bson::Boolean(boolean.unwrap()), registry, field.to_owned())
     }
 
-    pub fn integer_as_mongo_agregate(&self, field: &String, registry: QueryItems) -> (Bson, QueryItems, String) {
+    pub fn integer_as_mongo_agregate(&self, field: &str, registry: QueryItems) -> (Bson, QueryItems, String) {
         let value = self.value();
         let integer = value.parse::<i64>();
         //TODO: Error
         (Bson::Int64(integer.unwrap()), registry, field.to_owned())
     }
 
-    fn collection_as_mongo_agregate(&self, field: &String, mut registry: QueryItems) -> (Bson, QueryItems, String) {
+    fn collection_as_mongo_agregate(&self, field: &str, mut registry: QueryItems) -> (Bson, QueryItems, String) {
         let value = self.value();
         for child in self.children() {
             registry = child.make_agregate(registry);
         }
-        return (Bson::String(value), registry, field.to_owned());
+        return (Bson::String(value.to_string()), registry, field.to_owned());
     }
 
 }
 
 impl FieldData {
     
-    pub fn collection_as_mongo_create(collection: Vec<FieldData>) -> Result<Vec<IndexModel>, ConnectException>  {
+    pub fn collection_as_mongo_create(collection: &Vec<FieldData>) -> Result<Vec<IndexModel>, ConnectException>  {
         collection.iter()
             .map(|f| f.as_mongo_create())
             .collect()

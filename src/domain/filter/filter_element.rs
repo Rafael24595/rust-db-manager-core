@@ -109,15 +109,15 @@ impl FilterElement {
     pub fn push(&mut self, mut filter: FilterElement) -> &Self {
         let mut collection = Vec::new();
 
-        if filter.value.category() == EFilterCategory::ROOT {
-            filter.value = FilterValue::collection(filter.value.children());
+        if *filter.value.category() == EFilterCategory::ROOT {
+            filter.value = FilterValue::collection(filter.value.children().to_vec());
         }
 
         collection.push(filter);
 
         let value;
-        if self.value.category() == EFilterCategory::ROOT {
-            collection.append(&mut self.value.children());
+        if *self.value.category() == EFilterCategory::ROOT {
+            collection.append(&mut self.value.children().to_vec());
             value = FilterValue::root_collection(collection);
         } else {
             collection.push(self.clone());
@@ -126,63 +126,63 @@ impl FilterElement {
 
         self.value = value;
         
-        return self;
+        self
     }
 
     pub fn as_and(&mut self) -> &mut FilterElement {
         self.direction = true;
-        return self;
+        self
     }
 
     pub fn as_and_ref(&mut self) -> FilterElement {
-        return self.as_and().as_ref();
+        self.as_and().as_ref()
     }
 
     pub fn as_or(&mut self) -> &mut FilterElement {
         self.direction = false;
-        return self;
+        self
     }
 
     pub fn as_or_ref(&mut self) -> FilterElement {
-        return self.as_or().as_ref();
+        self.as_or().as_ref()
     }
 
     pub fn negate(&mut self) -> &mut FilterElement {
         self.negation = true;
-        return self;
+        self
     }
 
     pub fn negate_ref(&mut self) -> FilterElement {
-        return self.negate().as_ref();
+        self.negate().as_ref()
     }
 
     pub fn affirmate(&mut self) -> &mut FilterElement {
         self.negation = false;
-        return self;
+        self
     }
 
     pub fn affirmate_ref(&mut self) -> FilterElement {
-        return self.affirmate().as_ref();
+        self.affirmate().as_ref()
     }
 
-    pub fn field(&self) -> String {
-        return self.key.clone();
+    pub fn field(&self) -> &str {
+        &self.key
     }
 
     pub fn value(&self) -> &FilterValue {
-        return &self.value;
+        &self.value
     }
 
     pub fn is_negate(&self) -> bool {
-        return self.negation;
+        self.negation
     }
 
     pub fn is_or(&self) -> bool {
-        return !self.direction;
+        !self.direction
     }
 
     pub fn as_ref(&self) -> FilterElement {
-        return self.clone();
+        self.clone()
     } 
 
 }

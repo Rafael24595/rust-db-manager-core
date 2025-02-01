@@ -14,12 +14,12 @@ impl Action {
         }
     }
 
-    pub fn action(&self) -> String {
-        self.action.clone()
+    pub fn action(&self) -> &str {
+        &self.action
     }
 
-    pub fn form(&self) -> Vec<ActionForm> {
-        self.form.clone()
+    pub fn form(&self) -> &Vec<ActionForm> {
+        &self.form
     }
 
     pub fn find_form(&self, code: String) -> Option<&ActionForm> {

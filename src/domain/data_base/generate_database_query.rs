@@ -11,8 +11,8 @@ impl GenerateDatabaseQuery {
         }
     }
 
-    pub fn data_base(&self) -> String {
-        return self.data_base.clone();
+    pub fn data_base(&self) -> &str {
+        &self.data_base
     }
 
 }

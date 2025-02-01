@@ -168,7 +168,7 @@ impl Configuration {
         for (_, service) in &self.services {
             let binding = service.read().await;
             let config = binding.configuration();
-            services.push(DBServiceLite::new(config.name(), config.is_protected(), config.category()));
+            services.push(DBServiceLite::new(config.name().to_string(), config.is_protected(), config.category().clone()));
         }
         services
     }
@@ -178,14 +178,14 @@ impl Configuration {
     }
 
     pub async fn push_service(&mut self, service: DBService) -> Result<DBService, ConfigurationException> {
-        if self.services.contains_key(&service.name()) {
+        if self.services.contains_key(service.name()) {
             let exception = ConfigurationException::new("Service already exists.");
             return Err(exception);
         }
         
         let connection = RwLock::new(DBConnection::new(&service));
 
-        self.services.insert(service.name(), connection);
+        self.services.insert(service.name().to_string(), connection);
         self.write_cached().await?;
         
         Ok(service)
@@ -195,7 +195,7 @@ impl Configuration {
         let config = Self::instance().await?;
         let config = config.write().await;
 
-        let aux = self.services.get(&service.name());
+        let aux = self.services.get(service.name());
 
         let mut schema = None;
         if let Some(aux) = aux {
@@ -205,14 +205,14 @@ impl Configuration {
 
         let connection = RwLock::new(DBConnection::new(&service));
 
-        self.services.insert(service.name(), connection);
+        self.services.insert(service.name().to_string(), connection);
         Self::write_cached(&config).await?;
 
         Ok(schema)
     }
 
     pub async fn remove_service(&mut self, service: DBService) -> Result<Option<DBService>, ConfigurationException> {
-        let result = self.services.remove(&service.name());
+        let result = self.services.remove(service.name());
 
         let mut schema = None;
         if let Some(aux) = result {
@@ -246,7 +246,7 @@ impl Configuration {
         let mut services = HashMap::new();
         for service in deserialized.unwrap() {
             let connection = RwLock::new(DBConnection::new(&service));
-            services.insert(service.name(), connection);
+            services.insert(service.name().to_string(), connection);
         }
 
         services

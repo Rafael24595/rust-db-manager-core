@@ -18,20 +18,20 @@ impl DocumentKey {
         }
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn value(&self) -> String {
-        self.value.clone()
+    pub fn value(&self) -> &str {
+        &self.value
     }
 
-    pub fn json_type(&self) -> EJSONType {
-        self.json_type.clone()
+    pub fn json_type(&self) -> &EJSONType {
+        &self.json_type
     }
 
-    pub fn attributes(&self) -> Vec<DocumentKeyAttribute> {
-        self.attributes.clone()
+    pub fn attributes(&self) -> &Vec<DocumentKeyAttribute> {
+        &self.attributes
     }
 
 }

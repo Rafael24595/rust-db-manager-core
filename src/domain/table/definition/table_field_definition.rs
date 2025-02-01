@@ -14,8 +14,8 @@ impl TableFieldDefinition {
         }
     }
 
-    pub fn data(&self) -> String {
-        self.data.clone()
+    pub fn data(&self) -> &str {
+        &self.data
     }
 
     pub fn is_title(&self) -> bool {

@@ -20,20 +20,20 @@ impl ActionDefinition {
         }
     }
 
-    pub fn action(&self) -> String {
-        self.action.clone()
+    pub fn action(&self) -> &str {
+        &self.action
     }
 
-    pub fn title(&self) -> String {
-        self.title.clone()
+    pub fn title(&self) -> &str {
+        &self.title
     }
 
-    pub fn data(&self) -> Option<Vec<TableDefinition>> {
-        self.data.clone()
+    pub fn data(&self) -> &Option<Vec<TableDefinition>> {
+        &self.data
     }
 
-    pub fn form(&self) -> Option<ActionFormCollection> {
-        self.form.clone()
+    pub fn form(&self) -> &Option<ActionFormCollection> {
+        &self.form
     }
 
 }

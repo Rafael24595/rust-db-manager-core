@@ -21,12 +21,12 @@ impl TableDataGroup {
         self.order
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn fields(&self) -> Vec<TableDataField> {
-        self.fields.clone()
+    pub fn fields(&self) -> &Vec<TableDataField> {
+        &self.fields
     }
 
     pub fn push(&mut self, key: String, value: String) -> &mut Self {

@@ -17,12 +17,12 @@ impl ConnectionData {
         }
     }
 
-    pub fn category(&self) -> EDBRepository {
-        return self.category.clone();
+    pub fn category(&self) -> &EDBRepository {
+        &self.category
     }
 
-    pub fn connection(&self) -> String {
-        return self.connection.clone();
+    pub fn connection(&self) -> &str {
+        &self.connection
     }
 
 }

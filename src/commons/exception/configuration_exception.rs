@@ -24,8 +24,8 @@ impl ConfigurationException {
         };
     }
     
-    pub fn message(&self) -> String {
-        return self.message.clone();
+    pub fn message(&self) -> &str {
+        &self.message
     }
 
 }

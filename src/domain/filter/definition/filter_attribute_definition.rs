@@ -21,24 +21,24 @@ impl FilterAttributeDefinition {
         }
     }
     
-    pub fn code(&self) -> String {
-        self.code.clone()
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
-    pub fn description(&self) -> String {
-        self.description.clone()
+    pub fn description(&self) -> &str {
+        &self.description
     }
 
-    pub fn values(&self) -> Vec<FilterAttributeDefaultDefinition> {
-        self.values.clone()
+    pub fn values(&self) -> &Vec<FilterAttributeDefaultDefinition> {
+        &self.values
     }
 
-    pub fn applies(&self) -> Vec<EFilterCategory> {
-        self.applies.clone()
+    pub fn applies(&self) -> &Vec<EFilterCategory> {
+        &self.applies
     }
 
 }
