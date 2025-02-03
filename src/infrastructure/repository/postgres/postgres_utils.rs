@@ -117,7 +117,10 @@ impl GenerateCollectionQuery {
                 let reference = &field.reference()[0];
                 let collection = reference.collection();
                 let field = reference.field();
-                let cascade_status = reference.cascade();
+                let mut cascade_status = "";
+                if reference.cascade() {
+                    cascade_status = "ON DELETE CASCADE";
+                }
 
                 let key_sentence = format!("FOREIGN KEY  ({}) REFERENCES {}({}) {}", name, collection, field, cascade_status);
 
@@ -125,8 +128,8 @@ impl GenerateCollectionQuery {
             }
         }
 
+        buffer_fields.append(&mut buffer_fks);
         buffer.push(buffer_fields.join(", "));
-        buffer.push(buffer_fks.join(", "));
         buffer.push(String::from(");"));
 
         buffer.join("")
