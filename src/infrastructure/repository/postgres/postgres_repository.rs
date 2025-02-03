@@ -270,10 +270,7 @@ impl IDBRepository for PostgresRepository {
         Ok(definition)
     }
 
-    async fn data_base_metadata(
-        &mut self,
-        query: &DataBaseQuery,
-    ) -> Result<Vec<TableDataGroup>, ConnectException> {
+    async fn data_base_metadata(&mut self, query: &DataBaseQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let client = self.connect_table_from_db(query).await?;
         ExtractorMetadataPostgres::from_data_base(client).await
     }
@@ -315,10 +312,7 @@ impl IDBRepository for PostgresRepository {
         Ok(db_exists)
     }
 
-    async fn data_base_create(
-        &mut self,
-        query: &GenerateDatabaseQuery,
-    ) -> Result<String, ConnectException> {
+    async fn data_base_create(&mut self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
         let data_base = query.data_base();
         let create_db_query = format!("CREATE DATABASE {};", data_base);
 
@@ -331,10 +325,7 @@ impl IDBRepository for PostgresRepository {
         Ok(data_base.to_string())
     }
 
-    async fn data_base_drop(
-        &self,
-        query: &GenerateDatabaseQuery,
-    ) -> Result<String, ConnectException> {
+    async fn data_base_drop(&self, query: &GenerateDatabaseQuery) -> Result<String, ConnectException> {
         let data_base = query.data_base();
         let create_db_query = format!("DROP DATABASE {};", data_base);
         
@@ -347,10 +338,7 @@ impl IDBRepository for PostgresRepository {
         Ok(data_base.to_string())
     }
 
-    async fn collection_metadata(
-        &mut self,
-        query: &CollectionQuery,
-    ) -> Result<Vec<TableDataGroup>, ConnectException> {
+    async fn collection_metadata(&mut self, query: &CollectionQuery) -> Result<Vec<TableDataGroup>, ConnectException> {
         let client = self.connect_table_from_collection(query).await?;
         ExtractorMetadataPostgres::from_collection(query, client).await
     }
@@ -362,10 +350,7 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn collection_actions(
-        &mut self,
-        query: &CollectionQuery,
-    ) -> Result<Vec<ActionDefinition>, ConnectException> {
+    async fn collection_actions(&mut self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {
         let client = self.connect_table_from_collection(query).await?;
         let definition = ExtractorMetadataPostgres::collection_actions(client).await?;
         Ok(definition)
@@ -379,18 +364,11 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn collection_execute_action(
-        &self,
-        query: &CollectionQuery,
-        action: &Action,
-    ) -> Result<String, ConnectException> {
+    async fn collection_execute_action(&self, query: &CollectionQuery, action: &Action) -> Result<String, ConnectException> {
         todo!()
     }
 
-    async fn collection_find_all(
-        &mut self,
-        query: &DataBaseQuery,
-    ) -> Result<Vec<String>, ConnectException> {
+    async fn collection_find_all(&mut self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException> {
         let client = self.connect_table_from_db(query).await?;
 
         let rows = client.query("
@@ -416,10 +394,7 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn collection_create(
-        &mut self,
-        query: &GenerateCollectionQuery,
-    ) -> Result<String, ConnectException> {
+    async fn collection_create(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         let client =  self.connect_table(&query.data_base()).await?;
 
         let create_collection_query = query.to_postgres_query();
@@ -433,11 +408,17 @@ impl IDBRepository for PostgresRepository {
         Ok(query.collection().to_string())
     }
 
-    async fn collection_drop(
-        &self,
-        query: &GenerateCollectionQuery,
-    ) -> Result<String, ConnectException> {
-        todo!()
+    async fn collection_drop(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
+        let client =  self.connect_table(&query.data_base()).await?;
+
+        let drop_query = format!("DROP TABLE IF EXISTS {}", query.collection());
+        let result = client.execute(&drop_query, &[]).await;
+        if let Err(result) = result {
+            let exception = ConnectException::new(result.to_string());
+            return Err(exception);
+        }
+
+        Ok(query.collection().to_string())
     }
 
     async fn collection_rename(

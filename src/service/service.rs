@@ -89,7 +89,7 @@ impl Service {
         return self.repository.collection_create(query).await;
     }
 
-    pub async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
+    pub async fn collection_drop(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         return self.repository.collection_drop(query).await;
     }
 

@@ -376,7 +376,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(name.to_string())
     }
 
-    async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
+    async fn collection_drop(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException> {
         let collection = self.collection_from_resource(&query);
         let result = collection.drop(None).await;
         if let Err(error) = result {

@@ -33,7 +33,7 @@ pub trait IDBRepository: Send + Sync {
     async fn collection_find_all(&mut self, query: &DataBaseQuery) -> Result<Vec<String>, ConnectException>;
     async fn collection_exists(&mut self, query: &CollectionQuery) -> Result<bool, ConnectException>;
     async fn collection_create(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
-    async fn collection_drop(&self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
+    async fn collection_drop(&mut self, query: &GenerateCollectionQuery) -> Result<String, ConnectException>;
     async fn collection_rename(&self, query: &CollectionQuery, name: &str) -> Result<String, ConnectException>;
     async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException>;
     async fn collection_import(&self, query: &CollectionQuery, documents: Vec<String>) -> Result<String, ConnectException>;
