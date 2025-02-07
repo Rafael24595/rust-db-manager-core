@@ -65,7 +65,7 @@ impl Service {
         return self.repository.collection_metadata(query).await;
     }
 
-    pub async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
+    pub async fn collection_information(&mut self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
         return self.repository.collection_information(query).await;
     }
 

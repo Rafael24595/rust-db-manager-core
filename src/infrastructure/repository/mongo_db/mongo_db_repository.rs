@@ -302,7 +302,7 @@ impl IDBRepository for MongoDbRepository {
         ExtractorMetadataMongoDb::from_collection(document)
     }
 
-    async fn collection_information(&self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
+    async fn collection_information(&mut self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
         let collection = self.collection(&query.data_base(), &query.collection());
         let o_indexes = collection.list_indexes(None).await;
         if let Err(error) = o_indexes {
