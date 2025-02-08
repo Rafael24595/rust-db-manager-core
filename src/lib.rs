@@ -81,12 +81,14 @@ pub mod domain {
         pub mod definition {
             pub mod filter_attribute_default_definition;
             pub mod filter_attribute_definition;
+            pub mod filter_definition_query;
             pub mod filter_definition;
+            pub mod filter_field_definition;
+            pub mod filter_fields_definition;
         }
         pub mod collection_query;
         pub mod data_base_query;
         pub mod document_query;
-        pub mod e_filter_category;
         pub mod filter_value;
         pub mod filter_value_attribute;
         pub mod filter_element;

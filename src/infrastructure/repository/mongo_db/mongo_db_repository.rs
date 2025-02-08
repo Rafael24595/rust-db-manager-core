@@ -24,7 +24,6 @@ use crate::{
         }, field::generate::field_data::FieldData, filter::{
             collection_query::CollectionQuery, data_base_query::DataBaseQuery,
             definition::filter_definition::FilterDefinition, document_query::DocumentQuery,
-            filter_element::FilterElement,
         }, table::{definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup}
     },
     infrastructure::repository::i_db_repository::IDBRepository,
@@ -80,12 +79,7 @@ impl MongoDbRepository {
     async fn find_cursor(&self, query: &DocumentQuery) -> Result<Cursor<Document>, ConnectException>  {
         let collection = self.collection(&query.data_base(), &query.collection());
 
-        let filter = query.filter()
-            .as_ref()
-            .cloned()
-            .unwrap_or(FilterElement::new());
-
-        let mut pipeline: Vec<Document> = filter.as_mongo_agregate()?;
+        let mut pipeline: Vec<Document> = query.as_mongo_agregate()?;
 
         if let Some(skip) = query.skip() {
             pipeline.push(doc! {"$skip":  Bson::Int64(skip as i64)});
@@ -94,6 +88,8 @@ impl MongoDbRepository {
         if let Some(limit) = query.limit() {
             pipeline.push(doc! {"$limit":  Bson::Int64(limit as i64)});
         }
+
+        println!("{:?}", pipeline);
 
         let r_cursor = collection.aggregate(pipeline, AggregateOptions::default()).await;
         if r_cursor.is_err() {
@@ -347,7 +343,7 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn collection_exists(&mut self, query: &CollectionQuery) -> Result<bool, ConnectException> {
-        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), Some(0), Some(1), None);
+        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), Some(0), Some(1), Vec::new(), None);
         let collections = self.find(&fix).await?;
         
         Ok(collections.iter().any(|document| &document.collection() == &query.collection()))
@@ -403,7 +399,7 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
-        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), None, None, None);
+        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), None, None, Vec::new(), None);
         let collection_data = self.find_all(&fix).await?;
         Ok(collection_data.documents().to_vec())
     }
@@ -437,12 +433,12 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
-        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), query.skip(), query.limit(), None);
+        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), query.skip(), query.limit(), Vec::new(), None);
         return self.find_query(&fix).await;
     }
 
     async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
-        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), None, None, query.filter().clone());
+        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), None, None, Vec::new(), query.filter().clone());
         let collection_data =  self.find_query(&fix).await?;
         let documents = collection_data.documents();
         Ok(documents.first().cloned())

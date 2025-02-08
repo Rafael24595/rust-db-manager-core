@@ -1,7 +1,5 @@
 use serde::Deserialize;
 
-use crate::domain::filter::e_filter_category::EFilterCategory;
-
 use super::filter_attribute_default_definition::FilterAttributeDefaultDefinition;
 
 #[derive(Clone, Deserialize)]
@@ -10,12 +8,12 @@ pub struct FilterAttributeDefinition {
     name: String,
     description: String,
     values: Vec<FilterAttributeDefaultDefinition>,
-    applies: Vec<EFilterCategory>,
+    applies: Vec<String>,
 }
 
 impl FilterAttributeDefinition {
     
-    pub fn new(code: String, name: String, description: String, values: Vec<FilterAttributeDefaultDefinition>, applies: Vec<EFilterCategory>) -> Self {
+    pub fn new(code: String, name: String, description: String, values: Vec<FilterAttributeDefaultDefinition>, applies: Vec<String>) -> Self {
         Self {
             code, name, description, values, applies
         }
@@ -37,7 +35,7 @@ impl FilterAttributeDefinition {
         &self.values
     }
 
-    pub fn applies(&self) -> &Vec<EFilterCategory> {
+    pub fn applies(&self) -> &Vec<String> {
         &self.applies
     }
 

@@ -335,6 +335,25 @@ pub fn postgres_collection() -> String {
     ).to_string()
 }
 
+pub fn postgres_db_filter() -> String {
+    json!(
+        {
+            "category_root": "FIELD",
+            "category_query": {
+                "category": "PLAY_GROUND",
+                "json_type": "SQL",
+                "example": "SELECT * FROM table_01 WHERE _id = \"0001\""
+            },
+            "categories": [
+                "FIELD",
+                "PLAY_GROUND"
+            ],
+            "fields": [],
+            "attributes": []
+        }
+    ).to_string()
+}
+
 pub fn postgres_collection_actions() -> String {
     json!(
         [

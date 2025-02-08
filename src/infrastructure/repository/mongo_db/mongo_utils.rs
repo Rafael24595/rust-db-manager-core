@@ -4,11 +4,9 @@ use serde_json::from_str;
 use crate::{
     commons::exception::connect_exception::ConnectException,
     domain::{
-        field::generate::field_data::FieldData,
-        filter::{
-            e_filter_category::EFilterCategory, filter_element::FilterElement,
-            filter_value::FilterValue,
-        },
+        e_json_type::EJSONType, field::generate::field_data::FieldData, filter::{
+            document_query::DocumentQuery, filter_element::FilterElement, filter_value::FilterValue, filter_value_attribute::FilterValueAttribute
+        }
     },
 };
 
@@ -61,7 +59,7 @@ impl FilterElement {
 
     fn make_agregate(&self, mut registry: QueryItems) -> QueryItems {
         let f_value = self.value();
-        let mut field = self.field();
+        let mut field = self.key();
 
         let result = f_value.as_mongo_agregate(&field, registry);
         let value = result.0;
@@ -69,9 +67,9 @@ impl FilterElement {
         field = &result.2;
 
         match f_value.category() {
-            EFilterCategory::ROOT => registry,
-            EFilterCategory::COLLECTION => self.make_collection(registry),
-            EFilterCategory::QUERY => self.make_query(registry, value),
+            "" | "ROOT" => registry,
+            "COLLECTION" => self.make_collection(registry),
+            "QUERY" => self.make_query(registry, value),
             _ => self.make_base(registry, field, value)
         }
     }
@@ -136,19 +134,61 @@ impl FilterElement {
         return registry;
     }
 
+    pub fn push_mongodb(&mut self, filter: FilterElement) -> &Self {
+        let mut collection = Vec::new();
+
+        let fix_filter;
+        if matches!(filter.value().category(), "" | "ROOT") {
+            let childs = filter.value().children().to_vec();
+            let fix_value = FilterValue::from(
+                String::from("COLLECTION"), 
+                String::new(), 
+                Vec::new(), 
+                childs);
+            fix_filter = FilterElement::from(
+                filter.key().to_owned(), 
+                fix_value, 
+                filter.is_and(), 
+                filter.is_negate())
+        } else {
+            fix_filter = filter;
+        }
+
+        collection.push(fix_filter);
+
+        let mut category = String::from("COLLECTION");
+        if matches!(self.value().category(), "" | "ROOT") {
+            category = String::from("ROOT");
+            collection.append(&mut self.value().children().to_vec());
+        } else {
+            collection.push(self.clone());
+        }
+
+        let value = FilterValue::from(
+            category, 
+            String::new(), 
+            Vec::new(), 
+            collection);
+
+        self.set_value(value);
+        
+        self
+    }
+
 }
 
 impl FilterValue {
  
     pub fn as_mongo_agregate(&self, field: &str, registry: QueryItems) -> (Bson, QueryItems, String) {
         match self.category() {
-            EFilterCategory::ID_NUMERIC | EFilterCategory::ID_STRING => self.id_as_mongo_agregate(field, registry),
-            EFilterCategory::QUERY => self.query_as_mongo_agregate(field, registry),
-            EFilterCategory::STRING => self.string_as_mongo_agregate(field, registry),
-            EFilterCategory::BOOLEAN => self.boolean_as_mongo_agregate(field, registry),
-            EFilterCategory::NUMERIC => self.integer_as_mongo_agregate(field, registry),
-            EFilterCategory::COLLECTION => self.collection_as_mongo_agregate(field, registry),
-            EFilterCategory::ROOT => self.collection_as_mongo_agregate(field, registry),
+            "ID_NUMERIC" | "ID_STRING" => self.id_as_mongo_agregate(field, registry),
+            "QUERY" => self.query_as_mongo_agregate(field, registry),
+            "STRING" => self.string_as_mongo_agregate(field, registry),
+            "BOOLEAN" => self.boolean_as_mongo_agregate(field, registry),
+            "NUMERIC" => self.integer_as_mongo_agregate(field, registry),
+            "COLLECTION" => self.collection_as_mongo_agregate(field, registry),
+            "" | "ROOT" => self.collection_as_mongo_agregate(field, registry),
+            _ => self.collection_as_mongo_agregate(field, registry),
         }
     }
 
@@ -277,6 +317,68 @@ impl FieldData {
             .build();
 
         Ok(index)
+    }
+
+}
+
+impl DocumentQuery {
+
+    pub fn as_mongo_agregate(&self) -> Result<Vec<Document>, ConnectException> {
+        self.filter()
+            .as_ref()
+            .cloned()
+            .unwrap_or(self.keys_to_mongodb_filter())
+            .as_mongo_agregate()
+    }
+
+    fn keys_to_mongodb_filter(&self) -> FilterElement {
+        let mut filter = FilterElement::new();
+    
+        for document in self.keys() {
+            match document.json_type() {
+                EJSONType::STRING => {
+                    let attributes = document.attributes().iter()
+                        .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string()))
+                        .collect();
+                    let value = FilterValue::from(
+                        String::from("ID_STRING"), 
+                        document.value().to_string(), 
+                        attributes, 
+                        Vec::new());
+                    filter.push_mongodb(FilterElement::from(
+                        document.name().to_string(), 
+                        value, 
+                        true,
+                    false));
+                },
+                EJSONType::NUMERIC => {
+                    let attributes = document.attributes().iter()
+                        .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string()))
+                        .collect();
+                    let value = FilterValue::from(
+                        String::from("ID_NUMERIC"), 
+                        document.value().to_string(), 
+                        attributes, 
+                        Vec::new());
+                    filter.push_mongodb(FilterElement::from(
+                        document.name().to_string(), 
+                        value,
+                        true,
+                    false));
+                },
+                EJSONType::BOOLEAN => {
+                    //TODO: error
+                },
+                EJSONType::OBJECT => {
+                    //TODO: error
+                },
+                EJSONType::ARRAY => {
+                    //TODO: error
+                },
+            }
+        }
+    
+        filter
     }
 
 }

@@ -105,8 +105,23 @@ pub fn mongo_db_collection_schema() -> String {
 pub fn mongo_db_filter() -> String {
     json!(
         {
-            "query_type": "JSON",
-            "query_example": "[{\"$addFields\":{\"_id_str\":{\"$toString\":\"$_id\"}}},{\"$match\":{\"_id_str\":{\"$regex\":\"0001\"}}},{\"$project\":{\"_id_str\":0}}]",
+            "category_root": "ROOT",
+            "category_query": {
+                "category": "QUERY",
+                "json_type": "JSON",
+                "example": "[{\"$addFields\":{\"_id_str\":{\"$toString\":\"$_id\"}}},{\"$match\":{\"_id_str\":{\"$regex\":\"0001\"}}},{\"$project\":{\"_id_str\":0}}]"
+            },
+            "categories": [
+                "ID_STRING",
+                "ID_NUMERIC",
+                "QUERY",
+                "STRING",
+                "BOOLEAN",
+                "NUMERIC",
+                "COLLECTION",
+                "ROOT"
+            ],
+            "fields": [],
             "attributes": [
                 {
                     "code": "OID",

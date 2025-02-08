@@ -55,7 +55,7 @@ impl DocumentQuery {
                 header = "AND";
             }
 
-            let key = field.field();
+            let key = field.key();
             let symbol = "=";
             let value = field.value().value();
 

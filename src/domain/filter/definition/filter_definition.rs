@@ -1,26 +1,41 @@
 use serde::Deserialize;
 
-use super::filter_attribute_definition::FilterAttributeDefinition;
+use super::{filter_attribute_definition::FilterAttributeDefinition, filter_definition_query::FilterDefinitionQuery, filter_fields_definition::FilterFieldsDefinition};
 
 #[derive(Clone, Deserialize)]
 pub struct FilterDefinition {
-    query_type: String,
-    query_example: String,
+    category_root: String,
+    category_query: FilterDefinitionQuery,
+    categories: Vec<String>,
+    fields: Vec<FilterFieldsDefinition>,
     attributes: Vec<FilterAttributeDefinition>
 }
 
 impl FilterDefinition {
 
-    pub fn query_type(&self) -> &str {
-        &self.query_type
+    pub fn category_root(&self) -> &str {
+        &self.category_root
     }
 
-    pub fn query_example(&self) -> &str {
-        &self.query_example
+    pub fn category_query(&self) -> &FilterDefinitionQuery {
+        &self.category_query
+    }
+
+    pub fn categories(&self) -> &Vec<String> {
+        &self.categories
+    }
+
+    pub fn fields(&self) -> &Vec<FilterFieldsDefinition> {
+        &self.fields
     }
 
     pub fn attributes(&self) -> &Vec<FilterAttributeDefinition> {
         &self.attributes
+    }
+
+    pub fn append_fields(&mut self, mut other: Vec<FilterFieldsDefinition>) -> &Self {
+        self.fields.append(&mut other);
+        self
     }
 
 }
