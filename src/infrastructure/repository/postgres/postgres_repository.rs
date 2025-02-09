@@ -470,8 +470,6 @@ impl IDBRepository for PostgresRepository {
 
         let sql = query.as_postres_sql()?;
 
-        println!("{}", sql);
-
         let rows = client.query(&sql, &[]).await;
         if let Err(err) = rows {
             let exception = ConnectException::new(err.to_string());
