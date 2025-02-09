@@ -33,8 +33,13 @@ impl FilterDefinition {
         &self.attributes
     }
 
-    pub fn append_fields(&mut self, mut other: Vec<FilterFieldsDefinition>) -> &Self {
-        self.fields.append(&mut other);
+    pub fn push_field(&mut self, other: FilterFieldsDefinition) -> &Self {
+        self.fields.push(other);
+        self
+    }
+
+    pub fn append_fields(&mut self, mut others: Vec<FilterFieldsDefinition>) -> &Self {
+        self.fields.append(&mut others);
         self
     }
 

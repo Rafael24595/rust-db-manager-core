@@ -6,10 +6,10 @@ use tokio_postgres::{Client, NoTls};
 use url::Url;
 
 use crate::{
-    commons::{configuration::definition::postgres::postgres_collection, exception::connect_exception::ConnectException},
+    commons::{configuration::definition::postgres::{postgres_collection, postgres_db_filter}, exception::connect_exception::ConnectException},
     domain::{
         action::{definition::action_definition::ActionDefinition, generate::action::Action}, collection::{collection_data::CollectionData, collection_definition::CollectionDefinition, collections_reference_definition::CollectionReferenceDefinition, generate_collection_query::GenerateCollectionQuery}, connection_data::ConnectionData, data_base::generate_database_query::GenerateDatabaseQuery, document::{document_data::DocumentData, document_schema::DocumentSchema, e_document_format::EDocumentFormat}, field::generate::{field_data::FieldData, field_reference::FieldReference}, filter::{
-            collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::filter_definition::FilterDefinition, document_query::DocumentQuery
+            collection_query::CollectionQuery, data_base_query::DataBaseQuery, definition::{filter_definition::FilterDefinition, filter_field_definition::FilterFieldDefinition, filter_fields_definition::FilterFieldsDefinition}, document_query::DocumentQuery
         }, table::{
             definition::table_definition::TableDefinition, group::table_data_group::TableDataGroup
         }
@@ -427,11 +427,10 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn collection_export(
-        &mut self,
-        query: &CollectionQuery,
-    ) -> Result<Vec<DocumentData>, ConnectException> {
-        todo!()
+    async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException> {
+        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), None, None, Vec::new(), None);
+        let collection_data = self.find_all(&fix).await?;
+        Ok(collection_data.documents().to_vec())
     }
 
     async fn collection_import(
@@ -442,18 +441,37 @@ impl IDBRepository for PostgresRepository {
         todo!()
     }
 
-    async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException> {
-        todo!()
+    async fn filter_schema(&mut self, query: &CollectionQuery) -> Result<FilterDefinition, ConnectException> {
+        let json = postgres_db_filter();
+
+        let mut definition: FilterDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
+
+        let fields = self.schema(query).await?.fields().iter()
+            .map(|f| FilterFieldDefinition::from(
+                f.code().to_string(), 
+                f.json_type().to_string(), 
+                Vec::new()))
+            .collect();
+
+        let category = FilterFieldsDefinition::from(String::from("FIELD"), fields);
+
+        definition.push_field(category);
+
+        Ok(definition)
     }
 
     async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
-        todo!()
+        let fix = DocumentQuery::to_all_paginated(&query);
+        return self.find_query(&fix).await;
     }
 
     async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
         let client = self.connect_table_from_document(query).await?;
 
         let sql = query.as_postres_sql()?;
+
+        println!("{}", sql);
+
         let rows = client.query(&sql, &[]).await;
         if let Err(err) = rows {
             let exception = ConnectException::new(err.to_string());
@@ -480,7 +498,10 @@ impl IDBRepository for PostgresRepository {
     }
 
     async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
-        todo!()
+        let fix = DocumentQuery::to_one(query);
+        let collection_data =  self.find_query(&fix).await?;
+        let documents = collection_data.documents();
+        Ok(documents.first().cloned())
     }
 
     async fn schema(&mut self, query: &CollectionQuery) -> Result<DocumentSchema, ConnectException> {

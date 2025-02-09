@@ -349,7 +349,38 @@ pub fn postgres_db_filter() -> String {
                 "PLAY_GROUND"
             ],
             "fields": [],
-            "attributes": []
+            "attributes": [
+                {
+                    "code": "REGEX",
+                    "name": "Regex",
+                    "description": "Filter contains",
+                    "values": [
+                        {
+                            "key": "False",
+                            "value": "FALSE",
+                            "default": true
+                        },
+                        {
+                            "key": "Case sensitive",
+                            "value": "CASE_SENSITIVE",
+                            "default": false
+                        },
+                        {
+                            "key": "Case insensitive",
+                            "value": "CASE_INSENSITIVE",
+                            "default": false
+                        },
+                        {
+                            "key": "Contains",
+                            "value": "CONTAINS",
+                            "default": false
+                        }
+                    ],
+                    "applies": [
+                        "FIELD"
+                    ]
+                },
+            ]
         }
     ).to_string()
 }

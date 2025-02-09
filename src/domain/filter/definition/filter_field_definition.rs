@@ -9,6 +9,10 @@ pub struct FilterFieldDefinition {
 
 impl FilterFieldDefinition {
 
+    pub fn from(field: String, json_type: String, defaults: Vec<String>) -> Self {
+        Self { field, json_type, defaults }
+    }
+
     pub fn field(&self) -> &str {
         &self.field
     }

@@ -11,7 +11,7 @@ pub struct FilterElement {
 impl FilterElement {
 
     pub fn new() -> Self {
-        let f_value = FilterValue::from(String::new(), String::new(), Vec::new(), Vec::new());
+        let f_value = FilterValue::from(String::new(), String::new(), String::new(), Vec::new(), Vec::new());
         Self::from(String::new(), f_value, true, false)
     }
 

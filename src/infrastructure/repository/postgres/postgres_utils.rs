@@ -56,10 +56,27 @@ impl DocumentQuery {
             }
 
             let key = field.key();
-            let symbol = "=";
-            let value = field.value().value();
+            
+            let regex = field.value().attributes().iter()
+                .find(|a| a.key() == "REGEX")
+                .map(|a| a.value())
+                .unwrap_or("CASE_SENTITIVE");
 
-            let condition = format!("{} {} {} {}", header, key, symbol, value);
+            let symbol = match regex {
+                "CASE_SENSITIVE" => "~",
+                "CASE_INSENSITIVE" => "~*",
+                "CONTAINS" => "ILIKE",
+                "" | "FALSE" | _ => "="
+            };
+            
+            let value = field.value().value().to_string();
+            let fix_value = match field.value().json_type() {
+                "STRING" if regex == "CONTAINS" => format!("'%{}%'", value),
+                "STRING" => format!("'{}'", value),
+                _ => value
+            };
+
+            let condition = format!("{} {} {} {}", header, key, symbol, fix_value);
             conditions.push(condition);
         }
         Ok(conditions)

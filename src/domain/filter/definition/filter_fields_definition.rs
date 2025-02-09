@@ -10,6 +10,10 @@ pub struct FilterFieldsDefinition {
 
 impl FilterFieldsDefinition {
 
+    pub fn from(category: String, fields: Vec<FilterFieldDefinition>) -> Self {
+        Self { category, fields }
+    }
+
     pub fn category(&self) -> &str {
         &self.category
     }

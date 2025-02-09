@@ -38,7 +38,7 @@ pub trait IDBRepository: Send + Sync {
     async fn collection_export(&mut self, query: &CollectionQuery) -> Result<Vec<DocumentData>, ConnectException>;
     async fn collection_import(&self, query: &CollectionQuery, documents: Vec<String>) -> Result<String, ConnectException>;
     
-    async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException>;
+    async fn filter_schema(&mut self, query: &CollectionQuery) -> Result<FilterDefinition, ConnectException>;
     async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
     async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException>;
     async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException>;

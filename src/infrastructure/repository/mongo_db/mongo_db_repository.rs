@@ -89,8 +89,6 @@ impl MongoDbRepository {
             pipeline.push(doc! {"$limit":  Bson::Int64(limit as i64)});
         }
 
-        println!("{:?}", pipeline);
-
         let r_cursor = collection.aggregate(pipeline, AggregateOptions::default()).await;
         if r_cursor.is_err() {
             let exception = ConnectException::new(r_cursor.unwrap_err().to_string());
@@ -139,7 +137,7 @@ impl MongoDbRepository {
             self.delete_document(&collection, ids_to_action).await?;
         }
 
-        let total = self.find_cursor(&DocumentQuery::from_query_unpaginated(query)).await?
+        let total = self.find_cursor(&DocumentQuery::to_unpaginated(query)).await?
             .count().await;
 
         let data = CollectionData::new(
@@ -420,7 +418,7 @@ impl IDBRepository for MongoDbRepository {
         Ok(String::new())
     }
 
-    async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException> {        
+    async fn filter_schema(&mut self, query: &CollectionQuery) -> Result<FilterDefinition, ConnectException> {        
         let json = mongo_db_filter();
 
         let definition: FilterDefinition = serde_json::from_str(&json).expect("Failed to parse JSON");
@@ -433,12 +431,12 @@ impl IDBRepository for MongoDbRepository {
     }
 
     async fn find_all(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
-        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), query.skip(), query.limit(), Vec::new(), None);
+        let fix = DocumentQuery::to_all_paginated(&query);
         return self.find_query(&fix).await;
     }
 
     async fn find(&mut self, query: &DocumentQuery) -> Result<Option<DocumentData>, ConnectException> {
-        let fix = DocumentQuery::from(query.data_base().to_string(), query.collection().to_string(), None, None, Vec::new(), query.filter().clone());
+        let fix = DocumentQuery::to_one(query);
         let collection_data =  self.find_query(&fix).await?;
         let documents = collection_data.documents();
         Ok(documents.first().cloned())

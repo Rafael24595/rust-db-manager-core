@@ -5,6 +5,7 @@ use super::{
 #[derive(Clone)]
 pub struct FilterValue {
     category: String,
+    json_type: String,
     value: String,
     attributes: Vec<FilterValueAttribute>,
     children: Vec<FilterElement>
@@ -12,9 +13,10 @@ pub struct FilterValue {
 
 impl FilterValue {
 
-    pub fn from(category: String, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
+    pub fn from(category: String, json_type: String, value: String, attributes: Vec<FilterValueAttribute>, children: Vec<FilterElement>) -> FilterValue {
         return FilterValue {
             category,
+            json_type,
             value,
             attributes,
             children
@@ -23,6 +25,10 @@ impl FilterValue {
 
     pub fn category(&self) -> &str {
         &self.category
+    }
+
+    pub fn json_type(&self) -> &str {
+        &self.json_type
     }
 
     pub fn value(&self) -> &str {

@@ -142,7 +142,8 @@ impl FilterElement {
             let childs = filter.value().children().to_vec();
             let fix_value = FilterValue::from(
                 String::from("COLLECTION"), 
-                String::new(), 
+                String::new(),
+                String::new(),
                 Vec::new(), 
                 childs);
             fix_filter = FilterElement::from(
@@ -166,6 +167,7 @@ impl FilterElement {
 
         let value = FilterValue::from(
             category, 
+            String::new(),
             String::new(), 
             Vec::new(), 
             collection);
@@ -341,7 +343,8 @@ impl DocumentQuery {
                         .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string()))
                         .collect();
                     let value = FilterValue::from(
-                        String::from("ID_STRING"), 
+                        String::from("ID_STRING"),
+                        String::new(),
                         document.value().to_string(), 
                         attributes, 
                         Vec::new());
@@ -356,7 +359,8 @@ impl DocumentQuery {
                         .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string()))
                         .collect();
                     let value = FilterValue::from(
-                        String::from("ID_NUMERIC"), 
+                        String::from("ID_NUMERIC"),
+                        String::new(),
                         document.value().to_string(), 
                         attributes, 
                         Vec::new());

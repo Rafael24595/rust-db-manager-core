@@ -109,8 +109,8 @@ impl Service {
         return self.repository.collection_find_all(query).await;
     }
 
-    pub async fn filter_schema(&self) -> Result<FilterDefinition, ConnectException> {
-        return self.repository.filter_schema().await;
+    pub async fn filter_schema(&mut self, query: &CollectionQuery) -> Result<FilterDefinition, ConnectException> {
+        return self.repository.filter_schema(query).await;
     }
 
     pub async fn find_query(&mut self, query: &DocumentQuery) -> Result<CollectionData, ConnectException> {
