@@ -345,7 +345,7 @@ impl IDBRepository for PostgresRepository {
 
     async fn collection_information(&mut self, query: &CollectionQuery) -> Result<Vec<TableDefinition>, ConnectException> {
         let client = self.connect_table_from_collection(query).await?;
-        Ok(ExtractorMetadataPostgres::from_keys(&query, client).await?)
+        Ok(ExtractorMetadataPostgres::from_information(&query, client).await?)
     }
 
     async fn collection_actions(&mut self, query: &CollectionQuery) -> Result<Vec<ActionDefinition>, ConnectException> {

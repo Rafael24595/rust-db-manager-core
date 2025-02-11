@@ -212,6 +212,11 @@ impl ExtractorMetadataPostgres {
            Self::data_base_count_schemas(client).await?
         );
 
+        group.push(
+            String::from("Sequences"),
+           Self::data_base_count_sequences(client).await?
+        );
+
         Ok(group)
     }
 
@@ -235,16 +240,31 @@ impl ExtractorMetadataPostgres {
     }
 
     async fn data_base_count_schemas(client: &Client) -> Result<String, ConnectException> {
-        let row = client.query("
-            SELECT schema_name FROM information_schema.schemata;", &[]).await;
+        let row = client.query_one("
+            SELECT COUNT(*) FROM information_schema.schemata;", &[]).await;
         if let Err(err) = row {
             println!("{:?}", err.to_string());
             return Ok(0.to_string());
         }
 
         let row = row.unwrap();
+        let count: i64 = row.get("count");
 
-        Ok(row.len().to_string())
+        Ok(count.to_string())
+    }
+
+    async fn data_base_count_sequences(client: &Client) -> Result<String, ConnectException> {
+        let row = client.query_one("
+            SELECT COUNT(*) FROM pg_sequences seq;", &[]).await;
+        if let Err(err) = row {
+            println!("{:?}", err.to_string());
+            return Ok(0.to_string());
+        }
+
+        let row = row.unwrap();
+        let count: i64 = row.get("count");
+
+        Ok(count.to_string())
     }
 
     pub(crate) async fn collection_actions(client: &Client) -> Result<Vec<ActionDefinition>, ConnectException> {
@@ -307,7 +327,18 @@ impl ExtractorMetadataPostgres {
         Ok(group)
     }
 
-    pub(crate) async fn from_keys(query: &CollectionQuery, client: &Client) -> Result<Vec<TableDefinition>, ConnectException> {
+    pub(crate)  async fn from_information(query: &CollectionQuery, client: &Client) -> Result<Vec<TableDefinition>, ConnectException> {
+        let mut tables = Self::from_keys(query, client).await?;
+
+        let sequences = Self::sequences(query, client).await?;
+        if let Some(sequences) = sequences {
+            tables.push(sequences);
+        }
+
+        Ok(tables)
+    }
+
+    async fn from_keys(query: &CollectionQuery, client: &Client) -> Result<Vec<TableDefinition>, ConnectException> {
         let mut primary_keys = TableDefinition::new(String::from("Primary Keys"));
 
         let mut primary_titles = TableRowDefinition::new();
@@ -390,11 +421,14 @@ impl ExtractorMetadataPostgres {
             foreign_rows.push(row);
         }
 
+        let mut result = Vec::new();
+
         if primary_rows.len() > 0 {
             primary_keys.push(primary_titles);
             primary_rows.iter().for_each(|r| {
                 primary_keys.push(r.clone());
             });
+            result.push(primary_keys);
         }
 
         if foreign_rows.len() > 0 {
@@ -402,9 +436,65 @@ impl ExtractorMetadataPostgres {
             foreign_rows.iter().for_each(|r| {
                 foreign_keys.push(r.clone());
             });
+            result.push(foreign_keys);
         }
 
-        Ok(vec![primary_keys, foreign_keys])
+        Ok(result)
+    }
+
+    async fn sequences(query: &CollectionQuery, client: &Client) -> Result<Option<TableDefinition>, ConnectException> {
+        let mut sequences = TableDefinition::new(String::from("Sequences"));
+
+        let mut title = TableRowDefinition::new();
+        title.push_title(String::from("Name"));
+        title.push_title(String::from("Owner"));
+        title.push_title(String::from("Increment"));
+
+        let sql = "
+            SELECT
+                seq.sequencename AS sequence_name,
+                seq.sequenceowner AS sequenceowner,
+                seq.increment_by AS increment_by,
+                col.table_name AS table_name,
+                col.column_name AS column_name
+            FROM
+                pg_sequences seq
+            JOIN
+                pg_class tbl ON tbl.relname = seq.sequencename
+            JOIN
+                information_schema.columns col
+                ON col.column_default LIKE '%' || seq.sequencename || '%'
+            WHERE table_name = $1;";
+
+        let rows = client.query(sql, &[&query.collection()]).await;
+        if let Err(err) = rows {
+            let exception = ConnectException::new(err.to_string());
+            return Err(exception);
+        }
+
+        let mut sequence_rows = Vec::new();
+        for row in rows.unwrap() {
+            let sequence_name: &str = row.get("sequence_name");
+            let sequenceowner: &str = row.get("sequenceowner");
+            let increment_by: i64 = row.get("increment_by");
+
+            let mut sequence_row = TableRowDefinition::new();
+            sequence_row.push(sequence_name.to_string());
+            sequence_row.push(sequenceowner.to_string());
+            sequence_row.push(increment_by.to_string());
+            sequence_rows.push(sequence_row);
+        }
+
+        if sequence_rows.is_empty() {
+            return Ok(None);
+        }
+
+        sequences.push(title);
+        sequence_rows.iter().for_each(|r| {
+            sequences.push(r.clone());
+        });
+
+        Ok(Some(sequences))
     }
 
 }
